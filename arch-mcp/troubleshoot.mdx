@@ -1,0 +1,216 @@
+---
+title: "Troubleshooting"
+description: "Common issues and solutions"
+icon: "wrench"
+---
+
+# Troubleshooting
+
+## Verify Installation
+
+After installing and configuring the Arch MCP Server:
+
+<Steps>
+  <Step title="Client Settings">
+    Go to settings tab and Look for MCP tools icon in your client.
+  </Step>
+  
+  <Step title="Find arch-ops Server">
+    You should see "arch-ops" listed as a connected MCP server
+  </Step>
+  
+  <Step title="Test a Simple Query">
+    Try: `Search the Arch Wiki for 'installation guide'`
+  </Step>
+</Steps>
+
+## Common Installation Issues
+
+<AccordionGroup>
+  <Accordion title="Server shows as disconnected">
+    1. Verify uvx is installed: `uvx --version`
+    2. Check Python version: `python --version` (need 3.11+)
+    3. Reinstall: `uvx --reinstall arch-ops-server`
+    4. Restart your MCP client
+  </Accordion>
+  
+  <Accordion title="arch-ops doesn't appear">
+    1. Check config file has valid JSON (no trailing commas)
+    2. Verify file location is correct for your client
+    3. Completely quit and restart the client (not just reload)
+  </Accordion>
+</AccordionGroup>
+
+## Server Won't Start
+
+<Accordion title="uvx not found">
+**Error:** `command not found: uvx` or permission errors
+
+**Solution:**
+- Install uv first: `pip install uv` or use your package manager
+- Verify uvx is available: `uvx --version`
+- Check if uv is in your PATH: `which uv`
+</Accordion>
+
+<Accordion title="Python version error">
+**Error:** `Python 3.11+ required`
+
+**Solution:**
+```bash
+python --version  # Check current version
+# Install Python 3.11+ through your package manager
+sudo pacman -S python  # on Arch
+```
+</Accordion>
+
+<Accordion title="Missing dependencies">
+**Error:** `ModuleNotFoundError` or package installation fails
+
+**Solution:**
+```bash
+uvx --reinstall arch-ops-server  # Reinstall the package
+# or
+uvx --upgrade arch-ops-server    # Upgrade to latest version
+```
+</Accordion>
+
+<Accordion title="MCP server doesn't connect">
+**Error:** Server shows in tools but says "disconnected"
+
+**Solution:**
+1. Verify Python is installed: `python --version`
+2. Test server manually: `uvx arch-ops-server`
+3. Check uvx installation: `uvx --version`
+4. Restart your MCP client
+5. Check client logs for specific errors
+</Accordion>
+
+## Tools Return Errors
+
+<Accordion title="checkupdates not found">
+**Error:** `command 'checkupdates' not found`
+
+**Solution:**
+This is Arch-only and requires `pacman-contrib`:
+```bash
+sudo pacman -S pacman-contrib
+```
+
+On non-Arch systems, this tool is not available.
+</Accordion>
+
+<Accordion title="Timeout errors">
+**Error:** `TimeoutError` or `request timed out`
+
+**Solution:**
+1. Check internet connection: `ping google.com`
+2. Try a simpler query first
+3. Verify Arch Wiki and AUR are accessible:
+   - Wiki: `xh https://wiki.archlinux.org/api.php`
+   - AUR: `xh https://aur.archlinux.org/rpc`
+4. Increase timeout if needed (requires code change)
+</Accordion>
+
+<Accordion title="404 from AUR">
+**Error:** `AUR package not found` or HTTP 404
+
+**Solution:**
+1. Double-check package name spelling
+2. Try searching instead: `Search AUR for 'package-name'`
+3. The AUR might be temporarily down (rare)
+4. Try again in a few minutes
+</Accordion>
+
+<Accordion title="Rate limit errors (429)">
+**Error:** `Too many requests` or HTTP 429
+
+**Solution:**
+- AUR has rate limiting
+- Wait a few minutes before retrying
+- Don't spam requests
+- Share your use case (it's reasonable)
+</Accordion>
+
+## Platform-Specific Issues
+
+### On Non-Arch Systems
+
+| Feature | Status | Workaround |
+|---------|--------|-----------|
+| Wiki search & reading | ✅ Full | Works perfectly |
+| AUR search & PKGBUILD | ✅ Full | Works perfectly |
+| Official package info | ⚠️ Remote API | Uses online API instead of local pacman |
+| Update checking | ❌ Not available | Requires Arch Linux |
+
+### On Arch Linux
+
+All features available. If something isn't working:
+
+1. **Check system is updated:** `sudo pacman -Syu`
+2. **Verify dependencies:** `which pacman checkupdates yay paru`
+3. **Test locally:** `pacman -Si python` (should work)
+
+## Configuration Issues
+
+<Accordion title="Config syntax error">
+**Error:** `JSON parse error` or `invalid configuration`
+
+**Solution:**
+1. Validate JSON: Use `jq` or an online JSON validator
+2. Check for trailing commas
+3. Ensure proper JSON formatting
+4. Example valid config:
+```json
+{
+  "mcpServers": {
+    "arch-ops": {
+      "command": "uvx",
+      "args": ["arch-ops-server"]
+    }
+  }
+}
+```
+</Accordion>
+
+<Accordion title="Config not loading">
+**Error:** MCP server doesn't appear in client
+
+**Solution:**
+1. Restart your MCP client completely
+2. Check config file location:
+   - Claude: `~/.config/Claude/claude_desktop_config.json`
+   - Cursor: `~/.cursor/mcp_config.json`
+3. Verify file has valid JSON
+4. Clear client cache if available
+</Accordion>
+
+## Getting Help
+
+### Debug Commands
+
+```bash
+# Test server directly (for debugging)
+uvx arch-ops-server
+
+# Check uvx installation
+uvx --version
+
+# Reinstall if needed
+uvx --reinstall arch-ops-server
+
+# View recent logs
+journalctl -xe  # system logs
+tail -f ~/.config/Claude/logs  # Claude logs (if available)
+```
+
+### Resources
+
+- **Arch Wiki Issues:** Check [Arch Wiki](https://wiki.archlinux.org/)
+- **AUR Issues:** Check [AUR](https://aur.archlinux.org/)
+- **MCP Protocol:** Review [MCP Docs](https://modelcontextprotocol.io/)
+- **Bug Reports:** Open an issue on GitHub
+- **Feature Requests:** GitHub discussions
+
+---
+
+**Still stuck?** Check the server logs, verify your config is correct, and ensure all prerequisites are installed.

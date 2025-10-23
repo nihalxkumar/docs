@@ -1,0 +1,135 @@
+---
+title: "Development Setup"
+description: "Set up your development environment for Arch MCP Server"
+icon: "laptop-code"
+---
+
+# Development Setup
+
+Set up your environment for developing and testing the Arch MCP Server.
+
+<Note>
+This guide is for **developers** who want to contribute to the project. For **end users**, use the simple [uvx installation](/arch-mcp/install) instead.
+</Note>
+
+## Prerequisites
+
+- **Python 3.11+** - Check version: `python --version`
+- **uv** - Modern Python package manager
+- **Git** - Version control
+
+### Install uv
+
+<CodeGroup>
+```bash Arch Linux
+sudo pacman -S uv
+```
+
+```bash Other Linux/macOS
+curl -LsSf https://astral.sh/uv/install.sh | sh
+```
+
+```bash Windows
+powershell -c "irm https://astral.sh/uv/install.ps1 | iex"
+```
+</CodeGroup>
+
+## Clone Repository
+
+```bash
+git clone https://github.com/nihalxkumar/arch-mcp.git
+cd arch-mcp
+```
+
+## Install Development Dependencies
+
+```bash
+uv sync
+```
+
+This installs all dependencies including development tools.
+
+## Testing
+
+### Run Test Suite
+
+Verify all functionality is working:
+
+```bash
+uv run python test_server.py
+```
+
+**Expected output:**
+```
+✓ PASS: Wiki Search
+✓ PASS: AUR Search
+✓ PASS: Official Package Info
+✓ PASS: PKGBUILD Fetch
+
+Total: 4/4 tests passed
+```
+
+### Test with MCP Inspector
+
+Interactive browser-based testing - essential for development:
+
+```bash
+./test_inspector.sh
+```
+
+This opens a web interface where you can:
+- **Test tools interactively** - Call any tool with custom parameters
+- **Try resources** - Test URI schemes with different inputs
+- **Explore prompts** - See prompt workflows in action
+- **Debug responses** - Inspect JSON responses and errors
+
+<Tip>
+Use MCP Inspector during development to quickly test changes without restarting your MCP client.
+</Tip>
+
+## Testing Checklist
+
+Before submitting code, verify:
+
+- [ ] **Test suite passes** - `uv run python test_server.py`
+- [ ] **MCP Inspector works** - All tools return expected results
+- [ ] **Arch Linux testing** - Test on Arch if available
+- [ ] **Non-Arch testing** - Verify remote API fallbacks work
+- [ ] **Error logs clean** - No unexpected errors in `stderr`
+- [ ] **Error handling** - Test failure scenarios
+- [ ] **Documentation updated** - User-facing docs reflect changes
+
+## Recommended extensions:
+
+- Pylance (type checking)
+- Ruff (linting)
+
+### Type Checking
+
+```bash
+# Install mypy for type checking
+uv pip install mypy
+
+# Run type checks
+mypy arch_ops_server.py
+```
+
+## Next Steps
+
+<CardGroup cols={2}>
+  <Card
+    title="Code Standards"
+    icon="code"
+    href="/arch-mcp/code-standards"
+  >
+    Learn coding standards and best practices
+  </Card>
+  <Card
+    title="Contributing Guide"
+    icon="git-pull-request"
+    href="/arch-mcp/contributing"
+  >
+    Guidelines for submitting contributions
+  </Card>
+</CardGroup>
+

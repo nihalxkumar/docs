@@ -1,0 +1,148 @@
+---
+title: "Installation"
+description: "Install dependencies and verify the server works"
+icon: "download"
+---
+
+# Installation
+
+Install the Arch MCP Server and verify it's working.
+
+## Prerequisites
+
+- **Python 3.11+** - Check version: `python --version`
+- **uv** - Modern Python package manager (recommended)
+
+### Install uv
+
+<CodeGroup>
+```bash Arch Linux
+sudo pacman -S uv
+```
+
+```bash Homebrew (macOS/Linux)
+brew install uv
+```
+
+```bash Scoop (Windows)
+scoop install uv
+```
+
+```bash pip (Python)
+pip install uv
+```
+
+```bash Cargo (Rust)
+cargo install uv
+```
+
+```bash Other Linux/macOS
+curl -LsSf https://astral.sh/uv/install.sh | sh
+```
+
+```bash Windows
+powershell -c "irm https://astral.sh/uv/install.ps1 | iex"
+```
+</CodeGroup>
+
+<Accordion title="Additional Installation Methods">
+
+#### Manual Installation
+
+Download pre-built binaries from the [GitHub Releases page](https://github.com/astral-sh/uv/releases):
+
+1. Download the appropriate binary for your operating system
+2. Extract the binary to a directory in your PATH
+3. Make the binary executable (Linux/macOS): `chmod +x uv`
+
+#### Conda/Mamba
+
+If you use conda or mamba, you can install uv from conda-forge:
+
+```bash
+conda install -c conda-forge uv
+# or
+mamba install -c conda-forge uv
+```
+
+</Accordion>
+
+## Install Arch MCP Server
+
+Install the Arch MCP Server using uvx:
+
+```bash
+uvx arch-ops-server
+```
+
+This command will automatically:
+- Download and install the latest version
+- Set up all required dependencies
+- Make the server available globally
+
+## Configure MCP Client
+
+Connect your AI assistant to the Arch MCP Server by adding this to your MCP client configuration file:
+
+<Warning>
+The server will be available globally after installation with uvx.
+</Warning>
+
+```json
+{
+  "mcpServers": {
+    "arch-ops": {
+      "command": "uvx",
+      "args": ["arch-ops-server"]
+    }
+  }
+}
+```
+
+### Client-Specific Setup
+
+<Tabs>
+  <Tab title="Claude Desktop">
+    **Config file location:**
+    - **macOS:** `~/Library/Application Support/Claude/claude_desktop_config.json`
+    - **Linux:** `~/.config/Claude/claude_desktop_config.json`
+    - **Windows:** `%APPDATA%\Claude\claude_desktop_config.json`
+    
+    **Steps:**
+    1. Open the config file in a text editor
+    2. Add the JSON configuration above
+    3. Save and close
+    4. **Restart Claude Desktop completely**
+  </Tab>
+  
+  <Tab title="Cursor">
+    **Config file location:**
+    - **macOS/Linux:** `~/.cursor/mcp.json`
+    - **Windows:** `%APPDATA%\Cursor\mcp_config.json`
+    
+    **Steps:**
+    1. Open the config file in a text editor
+    2. Add the JSON configuration above
+    3. Save and close
+    4. **Restart Cursor**
+  </Tab>
+  
+  <Tab title="VS Code">
+    **Config file location:**
+    - `~/.config/Code/User/mcp_servers.json` (Linux/macOS)
+    - `%APPDATA%\Code\User\mcp_servers.json` (Windows)
+    
+    Requires the MCP extension installed.
+  </Tab>
+</Tabs>
+
+
+## Next Step
+
+<Card
+  title="Usage Examples"
+  icon="terminal"
+  href="/arch-mcp/examples"
+>
+  Try common use cases and queries
+</Card>

@@ -1,0 +1,116 @@
+---
+title: "Core Features"
+description: "Overview of Arch MCP capabilities"
+icon: "sparkles"
+---
+
+# Core Features
+
+Arch MCP Server provides three types of capabilities that work together to enable intelligent interaction with the Arch Linux ecosystem.
+
+## 🔍 Resources
+
+URI-based access to Arch ecosystem data - read documentation, package info, and system state.
+
+<Card
+  title="Resources Reference"
+  icon="folder-open"
+  href="/arch-mcp/resources"
+>
+  **5 URI schemes** for accessing Arch Wiki, AUR packages, official repos, and installed packages
+</Card>
+
+**What you can do:**
+- Access Arch Wiki pages in Markdown format
+- Fetch PKGBUILD files with safety annotations
+- Query AUR package metadata
+- Look up official repository packages
+- List installed packages (Arch only)
+
+## 🛠️ Tools
+
+Executable functions for search, security analysis, and package installation.
+
+<Card
+  title="Tools Reference"
+  icon="wrench"
+  href="/arch-mcp/tools"
+>
+  **8 tools** including search, security analysis, system checks, and secure installation
+</Card>
+
+**What you can do:**
+- Search Arch Wiki and AUR packages
+- Analyze PKGBUILD files for security risks
+- Evaluate package trustworthiness
+- Check for system updates safely
+- Install packages with automated security checks
+
+## 📋 Prompts
+
+Guided multi-step workflows that combine resources and tools for complex tasks.
+
+<Card
+  title="Prompts Reference"
+  icon="messages"
+  href="/arch-mcp/prompts"
+>
+  **3 intelligent workflows** for troubleshooting, security audits, and dependency analysis
+</Card>
+
+**What you can do:**
+- Diagnose system issues with Wiki-guided solutions
+- Audit AUR packages before installation
+- Plan installations by analyzing dependencies
+
+## How They Work Together
+
+**Example: Safe AUR Installation**
+```
+1. Prompt: audit_aur_package → Comprehensive safety check
+   ↓ uses
+2. Tool: analyze_package_metadata_risk → Check trust metrics
+   ↓ uses
+3. Resource: aur://package/info → Fetch metadata
+   ↓ and
+4. Tool: analyze_pkgbuild_safety → Scan for malicious code
+   ↓ uses  
+5. Resource: aur://package/pkgbuild → Fetch PKGBUILD
+   ↓ then
+6. Tool: install_package_secure → Install if safe
+```
+
+## Quick Reference
+
+| Type | Count | Access Method | Use Case |
+|------|-------|---------------|----------|
+| **Resources** | 5 | URI schemes | Direct data access |
+| **Tools** | 8 | Function calls | Single operations |
+| **Prompts** | 3 | Workflow triggers | Complex tasks |
+
+## Learn More
+
+<CardGroup cols={3}>
+  <Card
+    title="Security Features"
+    icon="shield"
+    href="/arch-mcp/secure-installation"
+  >
+    PKGBUILD analysis and safety mechanisms
+  </Card>
+  <Card
+    title="Examples"
+    icon="code"
+    href="/arch-mcp/examples"
+  >
+    Practical usage scenarios
+  </Card>
+  <Card
+    title="Architecture"
+    icon="diagram"
+    href="/arch-mcp/architecture"
+  >
+    Design and implementation details
+  </Card>
+</CardGroup>
+

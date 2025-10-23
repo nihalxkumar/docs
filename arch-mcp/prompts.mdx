@@ -1,0 +1,261 @@
+---
+title: "Prompts"
+description: "Guided workflows for common tasks"
+icon: "messages"
+---
+
+# Prompts (Guided Workflows)
+
+Pre-configured multi-step workflows that combine resources, tools, and AI reasoning to accomplish complex tasks efficiently.
+
+## What are Prompts?
+
+Prompts are intelligent workflows that:
+- Guide you through multi-step processes
+- Combine multiple tools automatically
+- Provide context-aware recommendations
+- Leverage AI reasoning for better results
+
+Unlike individual tools, prompts orchestrate multiple operations and make intelligent decisions based on intermediate results.
+
+## Available Prompts
+
+### troubleshoot_issue
+
+Diagnose and resolve system errors using Arch Wiki knowledge.
+
+**Purpose:** Help users identify and fix system problems by leveraging Wiki documentation and AI analysis.
+
+**Workflow:**
+1. Extract keywords from error description
+2. Search Arch Wiki for relevant documentation
+3. Analyze error context
+4. Provide context-aware suggestions
+5. Link to detailed Wiki sections
+
+**When to use:**
+- System errors or failures
+- Service/daemon issues  
+- Boot problems
+- Configuration errors
+- Package conflicts
+
+**Example Input:**
+```
+"My system won't boot, I get a grub rescue prompt"
+```
+
+**Example Output:**
+- Extracted keywords: "boot", "grub", "rescue"
+- Wiki pages: GRUB, Boot process, System rescue
+- Diagnostic steps
+- Recovery commands
+- Prevention tips
+
+**What it does:**
+1. Parses your error description
+2. Identifies key technical terms
+3. Searches multiple Wiki pages
+4. Prioritizes most relevant sections
+5. Provides step-by-step solutions
+6. Links to additional resources
+
+### audit_aur_package
+
+Perform comprehensive pre-installation security audit for AUR packages.
+
+**Purpose:** Evaluate package safety before installation by analyzing metadata, PKGBUILD, and trust indicators.
+
+**Workflow:**
+1. Fetch AUR package metadata
+2. Analyze package metadata risk
+3. Retrieve and analyze PKGBUILD
+4. Check for malicious patterns
+5. Evaluate maintainer reputation
+6. Generate security recommendations
+
+**When to use:**
+- Before installing any AUR package
+- Investigating suspicious packages
+- Security audits
+- Verifying package safety
+
+**Example Input:**
+```
+"yay"
+```
+
+**Example Output:**
+- Package info (votes: 2500+, popularity: high)
+- Metadata risk: LOW
+- PKGBUILD analysis: No suspicious patterns
+- Maintainer: Known contributor
+- Recommendation: SAFE TO INSTALL
+
+**Security Checks:**
+- ✓ Vote count validation
+- ✓ Maintainer verification  
+- ✓ Package age check
+- ✓ Update frequency analysis
+- ✓ PKGBUILD pattern scanning
+- ✓ Dependency safety
+
+**What it provides:**
+1. Overall risk assessment
+2. Detailed security findings
+3. Line-by-line PKGBUILD analysis
+4. Trust indicators
+5. Installation recommendation
+6. Alternative suggestions (if risky)
+
+### analyze_dependencies
+
+Plan package installation by mapping dependencies and determining optimal install order.
+
+**Purpose:** Understand package dependencies and create installation plan for complex setups.
+
+**Workflow:**
+1. Query official repositories
+2. Search AUR if needed
+3. Map dependency tree
+4. Check for conflicts
+5. Suggest installation order
+6. Identify optional vs required deps
+
+**When to use:**
+- Installing packages with many dependencies
+- Resolving dependency conflicts
+- Planning complex installations
+- Understanding package relationships
+
+**Example Input:**
+```
+"docker"
+```
+
+**Example Output:**
+- Repository: extra
+- Required dependencies: containerd, runc, bridge-utils
+- Optional dependencies: docker-compose, docker-buildx
+- Conflicts: None
+- Install order: 
+  1. containerd
+  2. runc  
+  3. bridge-utils
+  4. docker
+  5. docker-compose (optional)
+
+**What it analyzes:**
+1. Direct dependencies
+2. Transitive dependencies
+3. Conflicts and replaces
+4. Optional dependencies
+5. Make dependencies (AUR)
+6. Check dependencies (AUR)
+
+**Installation Planning:**
+- Groups packages by type
+- Orders by dependency chain
+- Flags potential conflicts
+- Highlights optional features
+- Suggests pre-installation steps
+
+## Prompt Usage Patterns
+
+### Troubleshooting Pattern
+```
+User: "Can't start nginx service, getting permission denied"
+AI (using troubleshoot_issue):
+  → Searches Wiki: "nginx", "systemd", "permissions"
+  → Finds relevant sections
+  → Provides diagnostic commands
+  → Suggests fixes with explanations
+```
+
+### Security Audit Pattern
+```
+User: "Is package-name safe to install?"
+AI (using audit_aur_package):
+  → Fetches metadata (votes, maintainer, age)
+  → Analyzes PKGBUILD for malicious code
+  → Checks maintainer reputation
+  → Provides risk assessment
+  → Recommends action
+```
+
+### Dependency Analysis Pattern
+```
+User: "What do I need to install package-name?"
+AI (using analyze_dependencies):
+  → Checks official repos first
+  → Maps dependency tree
+  → Identifies optional features
+  → Suggests install order
+  → Warns about conflicts
+```
+
+## Combining Prompts
+
+Prompts can be chained for complex workflows:
+
+**Example: Safe AUR Installation**
+```
+1. audit_aur_package → Check if package is safe
+2. analyze_dependencies → Plan installation
+3. (Manual) install_package_secure → Execute install
+```
+
+**Example: System Issue Resolution**
+```
+1. troubleshoot_issue → Diagnose problem
+2. search_archwiki → Get detailed docs
+3. (Manual) Apply suggested fix
+4. troubleshoot_issue → Verify resolution
+```
+
+## Prompt vs Tool vs Resource
+
+| Type | Purpose | Interaction | Examples |
+|------|---------|-------------|----------|
+| **Resource** | Read data | Passive lookup | `archwiki://`, `aur://*/info` |
+| **Tool** | Single operation | Execute function | `search_aur`, `analyze_pkgbuild_safety` |
+| **Prompt** | Multi-step workflow | Guided process | `troubleshoot_issue`, `audit_aur_package` |
+
+**When to use each:**
+- **Resource**: Direct data access, you know exact location
+- **Tool**: Single specific operation needed
+- **Prompt**: Complex task requiring multiple steps and AI reasoning
+
+## Learn More
+
+<CardGroup cols={2}>
+  <Card
+    title="Resources"
+    icon="folder-open"
+    href="/arch-mcp/resources"
+  >
+    URI-based data access
+  </Card>
+  <Card
+    title="Tools"
+    icon="wrench"
+    href="/arch-mcp/tools"
+  >
+    Individual executable functions
+  </Card>
+  <Card
+    title="Examples"
+    icon="code"
+    href="/arch-mcp/examples"
+  >
+    Practical usage scenarios
+  </Card>
+  <Card
+    title="Installation"
+    icon="download"
+    href="/arch-mcp/install"
+  >
+    Setup and configuration
+  </Card>
+</CardGroup>
+

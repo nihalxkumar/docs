@@ -1,0 +1,312 @@
+---
+title: "Tools"
+description: "Executable functions for search, analysis, and installation"
+icon: "wrench"
+---
+
+# Tools (Executable Functions)
+
+Interactive functions that perform operations and return results. Tools can search, analyze security, check system state, and install packages.
+
+## Search Tools
+
+Tools for discovering packages and documentation across the Arch ecosystem.
+
+### search_archwiki
+
+Query Arch Wiki documentation with intelligent ranking.
+
+**Parameters:**
+- `query` (string): Search terms or keywords
+
+**Features:**
+- Ranked results by relevance
+- Automatic keyword extraction
+- Context-aware suggestions
+- Multiple result snippets
+
+**Example:**
+```json
+{
+  "query": "systemd boot configuration"
+}
+```
+
+**Returns:**
+- List of matching Wiki pages
+- Relevance scores
+- Page excerpts
+- Direct links
+
+### search_aur
+
+Search AUR packages with smart ranking algorithms.
+
+**Parameters:**
+- `query` (string): Package name or description keywords
+- `sort_by` (optional): `relevance`, `votes`, `popularity`, `modified`
+
+**Features:**
+- Multi-factor ranking
+- Vote count weighting
+- Popularity metrics
+- Last modified dates
+
+**Example:**
+```json
+{
+  "query": "terminal emulator",
+  "sort_by": "popularity"
+}
+```
+
+**Returns:**
+- Matching AUR packages
+- Vote counts
+- Maintainer info
+- Short descriptions
+
+### get_official_package_info
+
+Lookup official repository packages with hybrid local/remote search.
+
+**Parameters:**
+- `package` (string): Package name
+
+**Features:**
+- Local database priority
+- Remote fallback
+- Detailed metadata
+- Dependency information
+
+**Example:**
+```json
+{
+  "package": "vim"
+}
+```
+
+**Returns:**
+- Package version and repository
+- Dependencies and conflicts
+- Installation size
+- Description and homepage
+
+## System Tools
+
+Safe, read-only tools for checking system state (Arch Linux only).
+
+### check_updates_dry_run
+
+Check for available system updates without making changes.
+
+**Parameters:** None
+
+**Features:**
+- Read-only operation
+- No system modifications
+- Requires pacman-contrib
+- Safe for automation
+
+**Example:**
+```json
+{}
+```
+
+**Returns:**
+- List of available updates
+- Current vs. new versions
+- Update sizes
+- Repository sources
+
+**Requirements:**
+- Arch Linux system
+- `pacman-contrib` package installed
+
+## Installation Tools
+
+Secure package installation with automated safety checks.
+
+### install_package_secure
+
+Install packages with comprehensive security validation.
+
+**Parameters:**
+- `package` (string): Package name to install
+- `from_aur` (boolean): Whether package is from AUR
+- `skip_security_check` (optional): Force skip checks (not recommended)
+
+**Features:**
+- Automatic PKGBUILD analysis
+- Metadata risk evaluation
+- Malicious pattern detection
+- User confirmation prompts
+
+**Security Checks:**
+1. PKGBUILD safety analysis
+2. Maintainer reputation check
+3. Vote/popularity validation
+4. Dependency verification
+
+**Example (AUR package):**
+```json
+{
+  "package": "yay",
+  "from_aur": true
+}
+```
+
+**Example (Official package):**
+```json
+{
+  "package": "vim",
+  "from_aur": false
+}
+```
+
+**Returns:**
+- Installation status
+- Security check results
+- Warning messages
+- Installation logs
+
+**Safety Features:**
+- Blocks high-risk packages automatically
+- Warns on medium-risk patterns
+- Requires confirmation for AUR packages
+- Provides detailed risk explanations
+
+<Tip>
+Always review security warnings before proceeding with AUR installations. The tool blocks known malicious patterns but cannot catch all threats.
+</Tip>
+
+## Security Tools
+
+Comprehensive analysis tools for evaluating package safety.
+
+### analyze_pkgbuild_safety
+
+Deep analysis of PKGBUILD files for security risks.
+
+**Parameters:**
+- `package` (string): AUR package name
+
+**Detection Capabilities:**
+- Malicious commands (curl | bash, chmod 777)
+- Obfuscation techniques (base64, eval)
+- Cryptocurrency miners
+- Network exfiltration
+- Privilege escalation
+- Suspicious dependencies
+
+**Example:**
+```json
+{
+  "package": "suspicious-package"
+}
+```
+
+**Returns:**
+- Risk level (low/medium/high/critical)
+- Detected issues with line numbers
+- Pattern explanations
+- Recommendations
+
+**Risk Levels:**
+- **Critical**: Known malicious patterns, installation blocked
+- **High**: Dangerous commands, strong warning
+- **Medium**: Suspicious patterns, caution advised
+- **Low**: Best practices violations, informational
+
+### analyze_package_metadata_risk
+
+Evaluate package trustworthiness based on metadata.
+
+**Parameters:**
+- `package` (string): AUR package name
+
+**Analysis Factors:**
+- Vote count (low votes = higher risk)
+- Popularity metrics
+- Maintainer reputation
+- Package age
+- Update frequency
+- Orphan status
+
+**Example:**
+```json
+{
+  "package": "yay"
+}
+```
+
+**Returns:**
+- Overall risk score
+- Individual metric scores
+- Trust indicators
+- Recommendation (install/caution/avoid)
+
+**Trust Indicators:**
+- High votes (>100) = trusted by community
+- Regular updates = active maintenance
+- Known maintainer = established reputation
+- Old package = proven stability
+- High popularity = widely used
+
+## Tool Usage Examples
+
+### Safe Installation Workflow
+```
+1. search_aur query="terminal emulator"
+2. analyze_package_metadata_risk package="alacritty"
+3. analyze_pkgbuild_safety package="alacritty"
+4. install_package_secure package="alacritty" from_aur=true
+```
+
+### Package Research
+```
+1. search_archwiki query="package manager"
+2. get_official_package_info package="pacman"
+3. search_aur query="pacman helper"
+```
+
+### System Maintenance
+```
+1. check_updates_dry_run
+2. get_official_package_info package="linux"
+3. search_archwiki query="system update"
+```
+
+## Learn More
+
+<CardGroup cols={2}>
+  <Card
+    title="Resources"
+    icon="folder-open"
+    href="/arch-mcp/resources"
+  >
+    URI-based data access
+  </Card>
+  <Card
+    title="Prompts"
+    icon="messages"
+    href="/arch-mcp/prompts"
+  >
+    Guided multi-step workflows
+  </Card>
+  <Card
+    title="Security Features"
+    icon="shield"
+    href="/arch-mcp/secure-installation"
+  >
+    Deep dive into safety mechanisms
+  </Card>
+  <Card
+    title="Examples"
+    icon="code"
+    href="/arch-mcp/examples"
+  >
+    Practical usage scenarios
+  </Card>
+</CardGroup>
+

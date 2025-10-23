@@ -1,0 +1,165 @@
+---
+title: "Try Examples"
+description: "Test with common use cases and examples"
+icon: "terminal"
+---
+
+# Try Examples
+
+Test the Arch MCP Server with these common use cases.
+
+## Search Examples
+
+### Search Arch Wiki
+
+```
+Search the Arch Wiki for 'installation guide'
+```
+
+Uses the `search_archwiki` tool to find relevant documentation.
+
+### Search AUR
+
+```
+Search AUR for 'yay'
+```
+
+Uses the `search_aur` tool with safety warnings automatically included.
+
+## Resource Examples
+
+### Read Wiki Page
+
+```
+What's in the Installation_guide Wiki page?
+```
+
+Reads `archwiki://Installation_guide` resource directly.
+
+### Get PKGBUILD
+
+```
+Show me the PKGBUILD for the 'yay' package
+```
+
+Fetches `aur://yay/pkgbuild` with raw content.
+
+## Package Info Examples
+
+### Official Package
+
+```
+Get info about the 'python' package
+```
+
+Uses `get_official_package_info` tool for official repository packages.
+
+### AUR Package Info
+
+```
+Show detailed information about the 'heynote' AUR package
+```
+
+Gets metadata including votes, maintainer, age, and status.
+
+## Security Examples
+
+### Audit AUR Package
+
+```
+Audit the AUR package 'yay' for safety
+```
+
+Uses the `audit_aur_package` prompt to:
+1. Fetch package metadata
+2. Analyze PKGBUILD for threats
+3. Provide security recommendations
+
+### Analyze PKGBUILD
+
+```
+Analyze this PKGBUILD for security issues: [paste PKGBUILD content]
+```
+
+Uses the `analyze_pkgbuild_safety` tool to detect malicious patterns.
+
+## System Examples (Arch Linux only)
+
+### Check Updates
+
+```
+Check what system updates are available
+```
+
+Uses `check_updates_dry_run` tool (read-only, safe operation).
+
+### Analyze Dependencies
+
+```
+Analyze dependencies for installing 'docker'
+```
+
+Uses the `analyze_dependencies` prompt workflow.
+
+## Advanced Examples
+
+### Compare Packages
+
+```
+Compare the 'vim' package between official repos and AUR
+```
+
+Combines multiple tools for comprehensive comparison.
+
+### Find Alternatives
+
+```
+I want to install 'nginx'. Search Arch Wiki for best practices and find alternatives in the AUR
+```
+
+Combines wiki search, official packages, and AUR search.
+
+### Security Review Workflow
+
+```
+Run a complete security audit for installing 'syncthing':
+1. Get official package info
+2. Check AUR alternatives
+3. Analyze PKGBUILDs for security
+4. Show comparison
+```
+
+Multi-step workflow combining tools and resources.
+
+## Troubleshooting
+
+<Accordion title="Tool not working?">
+1. Verify uvx installation: `uvx --version`
+2. Restart your MCP client (Claude Desktop, Cursor, etc.)
+3. Verify arch-ops appears in connected MCP servers
+4. Check logs in your client for specific errors
+5. Try reinstalling: `uvx --reinstall arch-ops-server`
+</Accordion>
+
+<Accordion title="Getting timeout errors?">
+1. Check internet connection
+2. Try a simpler query first
+3. Verify Arch Wiki and AUR are accessible
+</Accordion>
+
+<Accordion title="AUR search returns no results?">
+The package might not exist, or the AUR might be temporarily unavailable. Try:
+- Double-check package name spelling
+- Search for similar names
+- Try a few minutes later
+</Accordion>
+
+## Next Steps
+
+<Card
+  title="Troubleshooting"
+  icon="wrench"
+  href="/arch-mcp/troubleshoot"
+>
+  Common issues and solutions
+</Card>

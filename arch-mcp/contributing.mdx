@@ -1,0 +1,241 @@
+---
+title: "Contributing Guide"
+description: "Guidelines for contributing to Arch MCP Server"
+icon: "users"
+---
+
+# Contributing Guide
+
+Help improve the Arch MCP Server! We welcome contributions of all kinds.
+
+<Note>
+**For end users**: Use the simple [uvx installation](/arch-mcp/install) method. This guide is for **developers** who want to contribute code.
+</Note>
+
+## Before You Start
+
+<Steps>
+  <Step title="Set up development environment">
+    Follow the [Development Setup](/arch-mcp/development-setup) guide to clone the repository and install dependencies.
+  </Step>
+  
+  <Step title="Review code standards">
+    Read the [Code Standards](/arch-mcp/code-standards) to understand our coding practices.
+  </Step>
+  
+  <Step title="Check existing issues">
+    Browse [GitHub Issues](https://github.com/nihalxkumar/arch-mcp/issues) to find something to work on or report bugs.
+  </Step>
+</Steps>
+
+## Contribution Guidelines
+
+### Core Principles
+
+1. **Follow the Arch Way** - Simplicity, correctness, transparency
+2. **Add tests** - Test both Arch and non-Arch scenarios  
+3. **Document changes** - Update docstrings and user-facing docs
+4. **Keep it minimal** - No unnecessary abstractions
+5. **Handle errors gracefully** - Never crash the server
+
+### What to Contribute
+
+<AccordionGroup>
+  <Accordion title="Bug Fixes">
+    - Fix crashes or incorrect behavior
+    - Improve error messages
+    - Fix documentation typos
+  </Accordion>
+  
+  <Accordion title="New Features">
+    - Add new MCP tools (search, analysis)
+    - Add new resources (URI schemes)
+    - Add new prompts (workflows)
+    - Enhance security analysis
+  </Accordion>
+  
+  <Accordion title="Performance">
+    - Optimize slow operations
+    - Add caching where appropriate
+    - Reduce network requests
+  </Accordion>
+  
+  <Accordion title="Documentation">
+    - Improve user guides
+    - Add examples
+    - Fix unclear explanations
+  </Accordion>
+</AccordionGroup>
+
+## Adding Features
+
+### New Tools
+
+1. Create async function in appropriate module (`wiki.py`, `aur.py`, `pacman.py`)
+2. Add `@server.tool()` decorator in `arch_ops_server.py`
+3. Add to `list_tools()` with schema
+4. Add handler in `call_tool()`
+5. Document in examples
+
+### New Resources
+
+1. Define URI scheme (e.g., `newtype://identifier`)
+2. Add parsing in `read_resource()`
+3. Implement fetch logic
+4. Add to `list_resources()`
+5. Document usage
+
+### New Prompts
+
+1. Design workflow
+2. Add `@server.prompt()` decorator
+3. Implement in `get_prompt()`
+4. Add to `list_prompts()`
+5. Create example
+
+## Pull Request Process
+
+<Steps>
+  <Step title="Fork and Branch">
+    ```bash
+    # Fork on GitHub, then clone
+    git clone https://github.com/YOUR_USERNAME/arch-mcp.git
+    cd arch-mcp
+    
+    # Create feature branch
+    git checkout -b feature/my-awesome-feature
+    ```
+  </Step>
+  
+  <Step title="Make Changes">
+    - Follow [Code Standards](/arch-mcp/code-standards)
+    - Add type hints and docstrings
+    - Include debug logging
+    - Handle errors properly
+  </Step>
+  
+  <Step title="Test Your Changes">
+    Run the full testing checklist:
+    
+    - [ ] `uv run python test_server.py` - all tests pass
+    - [ ] Test with MCP Inspector - tools work correctly
+    - [ ] Test on Arch Linux (if available)
+    - [ ] Test on non-Arch system
+    - [ ] Check logs for errors (`stderr`)
+    - [ ] Verify error handling works
+    - [ ] Update documentation
+  </Step>
+  
+  <Step title="Commit and Push">
+    ```bash
+    # Stage changes
+    git add .
+    
+    # Commit using conventional commits format
+    git commit -m "feat(tools): add package dependency analyzer
+    
+    - Implements dependency tree analysis
+    - Added tests for cyclic dependencies
+    - Updated examples documentation"
+    
+    # Push to your fork
+    git push origin feature/my-awesome-feature
+    ```
+  </Step>
+  
+  <Step title="Open Pull Request">
+    1. Go to the [original repository](https://github.com/nihalxkumar/arch-mcp)
+    2. Click "New Pull Request"
+    3. Select your branch
+    4. Fill in description:
+       - What does this PR do?
+       - Why is it needed?
+       - How was it tested?
+    5. Submit!
+  </Step>
+</Steps>
+
+### Commit Message Format
+
+Follow [Conventional Commits](https://www.conventionalcommits.org/) specification:
+
+```
+<type>[optional scope]: <description>
+
+[optional body]
+
+[optional footer(s)]
+```
+
+**Types:**
+- `feat:` - New feature
+- `fix:` - Bug fix
+- `docs:` - Documentation only
+- `style:` - Code style changes (formatting, no logic change)
+- `refactor:` - Code change that neither fixes a bug nor adds a feature
+- `perf:` - Performance improvement
+- `test:` - Adding or updating tests
+- `chore:` - Maintenance tasks
+
+**Examples:**
+
+```bash
+# Feature
+git commit -m "feat(aur): add package popularity sorting
+
+Implement sorting by vote count and popularity score for AUR search results."
+
+# Bug fix
+git commit -m "fix(wiki): increase API timeout to 10 seconds
+
+The previous 5s timeout was causing failures for large Wiki pages.
+
+Fixes #123"
+
+# Documentation
+git commit -m "docs(readme): add MCP Inspector usage examples"
+
+# Breaking change
+git commit -m "feat(api)!: change search_aur return format
+
+BREAKING CHANGE: search_aur now returns dict with 'packages' and 'metadata' keys instead of plain list."
+```
+
+**Bad examples:**
+```bash
+git commit -m "fixed stuff"
+git commit -m "updates"
+git commit -m "WIP"
+```
+
+## Getting Help
+
+<CardGroup cols={2}>
+  <Card
+    title="GitHub Discussions"
+    icon="comments"
+    href="https://github.com/nihalxkumar/arch-mcp/discussions"
+  >
+    Ask questions and discuss ideas
+  </Card>
+  
+  <Card
+    title="GitHub Issues"
+    icon="bug"
+    href="https://github.com/nihalxkumar/arch-mcp/issues"
+  >
+    Report bugs and request features
+  </Card>
+</CardGroup>
+
+## Additional Resources
+
+- [MCP Specification](https://modelcontextprotocol.io/) - Protocol documentation
+- [Architecture Guide](/arch-mcp/architecture) - System design deep dive
+- [Arch Wiki API](https://wiki.archlinux.org/api.php) - MediaWiki API docs
+- [AUR RPC Interface](https://aur.archlinux.org/rpc) - AUR API documentation
+
+---
+
+Thank you for contributing! 🎉
+

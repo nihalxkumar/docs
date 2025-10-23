@@ -1,0 +1,165 @@
+---
+title: "Resources"
+description: "URI-based access to Arch ecosystem data"
+icon: "folder-open"
+---
+
+# Resources (URI-based Access)
+
+Direct access to Arch ecosystem data via custom URI schemes. Resources provide read-only access to Wiki pages, package information, and system data.
+
+## Available Resources
+
+| URI Scheme | Example | Returns |
+|------------|---------|---------|
+| `archwiki://` | `archwiki://Installation_guide` | Markdown-formatted Wiki page |
+| `aur://*/pkgbuild` | `aur://yay/pkgbuild` | Raw PKGBUILD with safety analysis |
+| `aur://*/info` | `aur://yay/info` | AUR package metadata (votes, maintainer, dates) |
+| `archrepo://` | `archrepo://vim` | Official repository package details |
+| `pacman://installed` | `pacman://installed` | System installed packages list (Arch only) |
+
+## How to Use Resources
+
+Resources are accessed through URI schemes in MCP-compatible clients. Each resource provides structured data that AI assistants can process and present in digestible formats.
+
+### Arch Wiki Resources
+
+**URI Scheme:** `archwiki://PAGE_NAME`
+
+Access any Arch Wiki page in Markdown format. The page name should match the Wiki URL slug.
+
+**Examples:**
+```
+archwiki://Installation_guide
+archwiki://Systemd
+archwiki://Pacman
+archwiki://GRUB
+```
+
+**Returns:**
+- Full Wiki page content in Markdown
+- Formatted sections and code blocks
+- Preserved links and references
+
+### AUR PKGBUILD Resources
+
+**URI Scheme:** `aur://PACKAGE_NAME/pkgbuild`
+
+Fetch raw PKGBUILD files with automatic safety analysis annotations.
+
+**Examples:**
+```
+aur://yay/pkgbuild
+aur://paru/pkgbuild
+aur://visual-studio-code-bin/pkgbuild
+```
+
+**Returns:**
+- Raw PKGBUILD content
+- Inline safety warnings for suspicious patterns
+- Dependency information
+- Build instructions
+
+### AUR Package Info Resources
+
+**URI Scheme:** `aur://PACKAGE_NAME/info`
+
+Retrieve comprehensive AUR package metadata.
+
+**Examples:**
+```
+aur://yay/info
+aur://spotify/info
+aur://zoom/info
+```
+
+**Returns:**
+- Package name and description
+- Maintainer information
+- Vote count and popularity
+- Last modified date
+- Dependencies and conflicts
+- License information
+
+### Official Repository Resources
+
+**URI Scheme:** `archrepo://PACKAGE_NAME`
+
+Query official Arch Linux repository packages.
+
+**Examples:**
+```
+archrepo://vim
+archrepo://python
+archrepo://firefox
+archrepo://nginx
+```
+
+**Returns:**
+- Package version and architecture
+- Repository location (core, extra, community)
+- Dependencies and optional dependencies
+- Package size and install date
+- Description and homepage
+
+### Installed Packages Resources
+
+**URI Scheme:** `pacman://installed`
+
+List all packages currently installed on the system (Arch Linux only).
+
+**Examples:**
+```
+pacman://installed
+```
+
+**Returns:**
+- Complete list of installed packages
+- Version numbers
+- Install dates
+- Package sizes
+
+**Note:** This resource only works on Arch Linux systems with pacman installed.
+
+## Resource Usage Patterns
+
+### Documentation Lookup
+```
+1. Search Wiki: archwiki://Package_management
+2. Get specific guide: archwiki://Installation_guide
+3. Review troubleshooting: archwiki://System_maintenance
+```
+
+### Package Research
+```
+1. Check official repo: archrepo://package-name
+2. If not found, check AUR: aur://package-name/info
+3. Review PKGBUILD: aur://package-name/pkgbuild
+```
+
+### System Audit
+```
+1. List installed packages: pacman://installed
+2. Check package details: archrepo://package-name
+3. Review documentation: archwiki://Package_name
+```
+
+## Learn More
+
+<CardGroup cols={2}>
+  <Card
+    title="Tools"
+    icon="wrench"
+    href="/arch-mcp/tools"
+  >
+    Executable functions for search and operations
+  </Card>
+  <Card
+    title="Prompts"
+    icon="messages"
+    href="/arch-mcp/prompts"
+  >
+    Guided workflows combining multiple steps
+  </Card>
+</CardGroup>
+

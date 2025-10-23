@@ -1,0 +1,450 @@
+---
+title: "Architecture"
+description: "Technical deep dive into system design, following the Arch Way principles"
+icon: "sitemap"
+---
+
+# Architecture
+
+Technical overview of the Arch MCP Server implementation following the Arch Way principles.
+
+## Design Philosophy
+
+This server embodies Arch Linux principles:
+
+1. **Minimalism** - No unnecessary abstractions, clean code
+2. **Correctness** - Robust error handling, type hints, comprehensive logging
+3. **Transparency** - Well-documented, readable source code
+4. **User-centricity** - Assumes competent users, provides information over hand-holding
+5. **Pragmatism** - Hybrid approach adapts to runtime environment
+
+## System Architecture
+
+```
+┌─────────────────────────────────────────────────────────┐
+│                    MCP Client (e.g., Claude Desktop)     │
+└───────────────────────┬─────────────────────────────────┘
+                        │ STDIO Transport
+                        │ (JSON-RPC over stdin/stdout)
+┌───────────────────────▼─────────────────────────────────┐
+│                   arch_ops_server.py                     │
+│                   (MCP Server Core)                      │
+│  ┌─────────────────────────────────────────────────┐   │
+│  │ Resources            Tools                Prompts│   │
+│  │ - archwiki://        - search_archwiki   - trbl  │   │
+│  │ - aur://             - search_aur        - audit │   │
+│  │                      - get_official_pkg  - deps  │   │
+│  │                      - check_updates            │   │
+│  │                      - analyze_pkgbuild         │   │
+│  └─────────────────────────────────────────────────┘   │
+└───────────────────────┬─────────────────────────────────┘
+                        │ Function Calls
+┌───────────────────────▼─────────────────────────────────┐
+│              Module Layer (src/arch_ops_server/)         │
+│  ┌──────────┐  ┌──────────┐  ┌──────────┐  ┌──────────┐│
+│  │ wiki.py  │  │  aur.py  │  │pacman.py │  │ utils.py ││
+│  │          │  │          │  │          │  │          ││
+│  │MediaWiki │  │ AUR RPC  │  │ Hybrid   │  │Platform  ││
+│  │API + BS4 │  │   v5     │  │Local/API │  │Detection ││
+│  └──────────┘  └──────────┘  └──────────┘  └──────────┘│
+└───────────────────────┬─────────────────────────────────┘
+                        │ Network/System Calls
+┌───────────────────────▼─────────────────────────────────┐
+│              External Services & Local System            │
+│  ┌──────────────┐  ┌──────────┐  ┌──────────────────┐  │
+│  │  Arch Wiki   │  │   AUR    │  │  Local pacman    │  │
+│  │  wiki.arch.. │  │  aur.a.. │  │  (if on Arch)    │  │
+│  └──────────────┘  └──────────┘  └──────────────────┘  │
+└─────────────────────────────────────────────────────────┘
+```
+
+## Module Breakdown
+
+### Main Entry Point (`arch_ops_server.py`)
+
+**Responsibilities:**
+- MCP protocol implementation
+- Resource URI handling
+- Tool invocation routing
+- Prompt template management
+- STDIO transport setup
+
+**Key Features:**
+- Async operation for all network calls
+- URI parsing for resources
+- JSON serialization of responses
+- Error propagation from modules
+
+### Utilities (`utils.py`)
+
+Helper functions for platform detection and safe execution:
+
+```python
+is_arch_linux() -> bool
+  # Checks /etc/arch-release and /etc/os-release
+
+run_command(cmd, timeout, check) -> tuple[int, str, str]
+  # Async subprocess with timeout protection
+
+add_aur_warning(data) -> dict
+  # Wraps AUR data with safety warnings
+
+create_error_response(type, message, details) -> dict
+  # Structured error format for MCP clients
+```
+
+### Arch Wiki Interface (`wiki.py`)
+
+Manages Arch Wiki searches and page retrieval:
+
+```python
+search_wiki(query: str) -> List[str]
+  └─> MediaWiki API opensearch
+      └─> Returns [titles, descriptions, urls]
+
+get_wiki_page(title: str) -> str
+  ├─> Try: _fetch_via_api()
+  │   └─> MediaWiki API parse action
+  └─> Fallback: _fetch_via_scraping()
+      └─> BeautifulSoup on HTML
+      └─> Extract #bodyContent div
+  
+  └─> Convert to Markdown (markdownify)
+```
+
+**API Endpoints:**
+- `https://wiki.archlinux.org/api.php`
+- Direct page URLs for scraping fallback
+
+**Error Handling:**
+- Timeouts (10s default)
+- HTTP errors with status codes
+- Missing pages (404)
+- API errors in response JSON
+
+### AUR RPC Interface (`aur.py`)
+
+Handles AUR package operations and security analysis:
+
+```python
+search_aur(query: str) -> dict
+  └─> GET /rpc?v=5&type=search&arg={query}
+      └─> Format package list
+      └─> add_aur_warning()
+
+get_aur_info(package: str) -> dict
+  └─> GET /rpc?v=5&type=info&arg[]={package}
+      └─> Format detailed package info
+      └─> add_aur_warning()
+
+get_pkgbuild(package: str) -> str
+  └─> GET /cgit/aur.git/plain/PKGBUILD?h={package}
+      └─> Raw PKGBUILD text
+
+analyze_pkgbuild_safety(content: str) -> dict
+  └─> Regex pattern matching for red flags
+      ├─> Dangerous: rm -rf /, dd, fork bombs
+      ├─> Suspicious: base64, eval, curl|sh
+      └─> Warnings: chmod 777, binary downloads
+```
+
+**API Endpoints:**
+- `https://aur.archlinux.org/rpc`
+- `https://aur.archlinux.org/cgit/aur.git/plain/PKGBUILD`
+
+### Official Repository Interface (`pacman.py`)
+
+Hybrid local/remote access to official packages:
+
+```python
+get_official_package_info(package: str) -> dict
+  ├─> If IS_ARCH and pacman exists:
+  │   └─> run_command(["pacman", "-Si", package])
+  │       └─> _parse_pacman_output()
+  └─> Else:
+      └─> GET archlinux.org/packages/search/json/
+          └─> Parse API response
+
+check_updates_dry_run() -> str
+  ├─> Verify IS_ARCH
+  ├─> Check checkupdates command exists
+  └─> run_command(["checkupdates"])
+      └─> _parse_checkupdates_output()
+```
+
+**Hybrid Approach:**
+- **On Arch**: Fast local queries, offline-capable
+- **Remote**: API-based, works anywhere
+
+## Data Flow Examples
+
+### Example 1: Reading an Arch Wiki Page
+
+<Mermaid
+  chart={`
+    graph TD
+    A["User Request<br/>archwiki://Systemd"] -->|MCP Client| B["arch_ops_server.py"]
+    B -->|read_resource| C["wiki.get_wiki_page"]
+    C -->|Try API| D["HTTP GET<br/>wiki.archlinux.org/api.php"]
+    D -->|JSON HTML| E["markdownify"]
+    E -->|Markdown| F["TextContent Response"]
+    F -->|Return| G["Display to User"]
+  `}
+/>
+
+### Example 2: Auditing an AUR Package
+
+<Mermaid
+  chart={`
+    graph TD
+    A["User: audit_aur_package<br/>package_name=yay"] -->|Prompt| B["Workflow Initiated"]
+    B -->|Step 1| C["search_aur"]
+    C -->|HTTP GET<br/>aur.archlinux.org/rpc| D["Package Metadata"]
+    B -->|Step 2| E["get_pkgbuild<br/>aur://yay/pkgbuild"]
+    E -->|HTTP GET<br/>cgit.aur.git/plain| F["Raw PKGBUILD"]
+    B -->|Step 3| G["analyze_pkgbuild_safety"]
+    G -->|Pattern Matching| H["Safety Report"]
+    B -->|Step 4| I["AI Summarizes"]
+    I -->|Final| J["Safety Recommendation"]
+  `}
+/>
+
+## Error Handling Strategy
+
+### Graceful Degradation
+
+```python
+wiki.get_wiki_page(title):
+  Try: API fetch
+    ├─ Success → return content
+    └─ Fail → Try scraping
+              ├─ Success → return content
+              └─ Fail → raise ValueError
+
+pacman.get_official_package_info(pkg):
+  If on Arch:
+    Try: Local pacman
+      ├─ Success → return info
+      └─ Fail → Try remote API
+  Else:
+    Try: Remote API
+      ├─ Success → return info
+      └─ Fail → return error_response
+```
+
+### Error Response Format
+
+All errors follow consistent structure:
+
+```json
+{
+  "error": true,
+  "type": "ErrorType",
+  "message": "Human-readable message",
+  "details": "Optional additional context"
+}
+```
+
+**Error Types:**
+- `NotFound` - Resource doesn't exist
+- `TimeoutError` - Network timeout
+- `HTTPError` - HTTP status error
+- `NotSupported` - Feature unavailable on platform
+- `CommandNotFound` - Required command missing
+- `RateLimitError` - API rate limit exceeded
+
+## Concurrency Model
+
+### Async/Await Throughout
+
+All network and subprocess operations are async for non-blocking I/O:
+
+```python
+# Server level
+async def read_resource(uri: str) -> str
+
+# Module level
+async def get_wiki_page(title: str) -> str
+async def search_aur(query: str) -> dict
+async def run_command(cmd: list) -> tuple
+
+# Client usage
+result = await wiki.search_wiki("systemd")
+```
+
+**Benefits:**
+- Non-blocking I/O
+- Concurrent tool calls possible
+- Responsive server
+- Timeout support built-in
+
+### HTTP Client Management
+
+Uses `httpx.AsyncClient` with context managers:
+
+```python
+async with httpx.AsyncClient(timeout=10.0) as client:
+    response = await client.get(url)
+```
+
+**Features:**
+- Automatic connection pooling
+- Timeout enforcement
+- Proper cleanup
+- HTTP/2 support
+
+## Security Considerations
+
+### AUR Safety (Defense in Depth)
+
+1. **Warning metadata** - All AUR responses include warnings
+2. **PKGBUILD analysis** - Automated scanning for red flags
+3. **Metadata display** - Show votes, maintainer, age
+4. **Manual review** - Encourage PKGBUILD inspection
+5. **Official first** - Always check official repos first
+
+**Known Limitations:**
+- Pattern matching can't catch all malicious code
+- Obfuscation can bypass detection
+- User judgment still required
+
+### Command Execution
+
+Only safe read-only commands:
+- `pacman -Si` - Query package info
+- `checkupdates` - Check for updates (no installation)
+
+**Protections:**
+- Timeout enforcement (default 10s)
+- No shell=True (prevents shell injection)
+- Whitelist of allowed commands
+- Platform checks before execution
+
+### Network Safety
+
+- **Timeout limits** - All requests have timeouts
+- **HTTPS only** - No plaintext HTTP
+- **Rate limiting** - Handle 429 responses
+- **Input validation** - Sanitize user inputs
+
+## Performance Optimizations
+
+### Caching Strategy
+
+**Current:** No caching (always live data)
+
+**Rationale:** Rolling release means data changes frequently
+
+**Future:** Consider time-based caching:
+- Wiki pages: 1 hour
+- Package info: 5 minutes
+- AUR metadata: 10 minutes
+
+### Request Efficiency
+
+- **Single API calls** - No unnecessary round trips
+- **Async operations** - Concurrent requests possible
+- **Connection pooling** - httpx manages connections
+- **Timeout limits** - Don't wait forever
+
+## Testing Strategy
+
+### Functional Tests
+
+Basic tests verify core functionality:
+
+```bash
+uv run python test_server.py
+```
+
+Tests cover:
+- Wiki search and page retrieval
+- AUR search and PKGBUILD fetch
+- Official package lookup
+- Platform detection
+
+### Integration Testing
+
+Use MCP Inspector for interactive testing:
+
+```bash
+./test_inspector.sh
+```
+
+### Manual Testing Checklist
+
+- [ ] Resources work on both Arch and non-Arch
+- [ ] Tools return proper error responses
+- [ ] Prompts guide users through workflows
+- [ ] AUR warnings always present
+- [ ] Timeouts enforced
+- [ ] Logging goes to stderr
+
+## Extension Points
+
+### Adding New Tools
+
+1. Create async function in appropriate module
+2. Export from `__init__.py`
+3. Add `@server.tool()` decorator in main file
+4. Update `list_tools()` with schema
+5. Add handler in `call_tool()`
+6. Document in README and examples
+
+### Adding New Resources
+
+1. Define URI scheme
+2. Add parsing in `read_resource()`
+3. Implement fetch logic in module
+4. Add example to `list_resources()`
+5. Document usage
+
+### Adding New Prompts
+
+1. Design workflow
+2. Add `@server.prompt()` decorator
+3. Implement in `get_prompt()`
+4. Add to `list_prompts()`
+5. Create example in documentation
+
+## Future Enhancements
+
+### Planned Features
+
+- [ ] Caching layer for performance
+- [ ] Arch News integration
+- [ ] Package dependency tree analysis
+- [ ] Security advisory integration (arch-audit)
+- [ ] Local pacman.conf parsing
+- [ ] File list queries for packages
+- [ ] Systemd unit analysis
+- [ ] Custom repository support
+
+### Potential Improvements
+
+- [ ] Metrics collection (response times, error rates)
+- [ ] More sophisticated PKGBUILD analysis
+- [ ] Wiki page diff tracking
+- [ ] AUR package popularity trends
+- [ ] Integration with Arch forums
+- [ ] Batch operations support
+
+## Contributing
+
+Want to contribute? See the [Contributing Guide](/arch-mcp/contributing) for:
+- Development setup and testing
+- Code standards and best practices
+- Pull request process
+- Feature contribution guidelines
+
+## References
+
+- [MCP Specification](https://modelcontextprotocol.io/)
+- [Arch Wiki API](https://wiki.archlinux.org/api.php)
+- [AUR RPC Interface](https://aur.archlinux.org/rpc)
+- [Arch Linux Packages API](https://archlinux.org/packages/)
+- [MediaWiki API](https://www.mediawiki.org/wiki/API:Main_page)
+
+---
+
+Built with ❤️ following the Arch Way.
