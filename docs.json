@@ -3,9 +3,9 @@
   "name": "Docs",
   "theme": "willow",
   "colors": {
-    "primary": "#16A34A",
-    "light": "#07C983",
-    "dark": "#15803D"
+    "primary": "#1793d1",
+    "light": "#1793d1",
+    "dark": "#333333"
   },
   "favicon": "/favicon.svg",
   "navigation": {
@@ -17,7 +17,6 @@
             "group": "Getting started",
             "pages": [
               "arch-mcp/overview",
-              "arch-mcp/quickstart",
               "arch-mcp/install",
               "arch-mcp/examples",
               "arch-mcp/troubleshoot"
