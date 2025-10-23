@@ -13,61 +13,159 @@ Test the Arch MCP Server with these common use cases.
 ### Search Arch Wiki
 
 ```
-Search the Arch Wiki for 'installation guide'
+give me gnu pass documentation
 ```
 
-Uses the `search_archwiki` tool to find relevant documentation.
+Reads `archwiki://Pass` resource and combines with other tools comprehensive documenation.
+
+<Frame caption="Example of reading Arch Wiki documentation">
+  <img 
+    src="/images/examples/wiki-docs.png" 
+    alt="Arch Wiki documentation reading example showing comprehensive search workflow" 
+    style={{ borderRadius: '0.5rem' }}
+  />
+</Frame>
 
 ### Search AUR
 
-```
-Search AUR for 'yay'
-```
-
-Uses the `search_aur` tool with safety warnings automatically included.
-
-## Resource Examples
-
-### Read Wiki Page
+Uses the `search_aur` tool with safety warnings automatically included to find popular alternatives.
 
 ```
-What's in the Installation_guide Wiki page?
+Do we have any AI browser in AUR?
 ```
 
-Reads `archwiki://Installation_guide` resource directly.
+<Frame caption="Example of finding browsers through comprehensive search">
+  <img 
+    src="/images/examples/browser-search.png" 
+    alt="Example showing multiple browser search results" 
+    style={{ borderRadius: '0.5rem' }}
+  />
+</Frame>
 
-### Get PKGBUILD
+
+### Find Alternatives
 
 ```
-Show me the PKGBUILD for the 'yay' package
+I need a web server for my project, what are my options and what does the Arch Wiki recommend?
 ```
 
-Fetches `aur://yay/pkgbuild` with raw content.
+Combines wiki search, official packages, and AUR search to find the best solution.
 
-## Package Info Examples
+<Frame caption="Example of finding alternatives through comprehensive search">
+  <img 
+    src="/images/examples/find_alternatives.png" 
+    alt="Find alternatives search example showing comprehensive search workflow" 
+    style={{ borderRadius: '0.5rem' }}
+  />
+</Frame>
+
+## Package Info and Install Examples
 
 ### Official Package
 
 ```
-Get info about the 'python' package
+I want to install Python for development, what version is available in the official repos?
 ```
 
-Uses `get_official_package_info` tool for official repository packages.
+Uses `get_official_package_info` tool for official repository packages to check versions and dependencies.
+
+<Frame caption="Example of checking official Python package information">
+  <img 
+    src="/images/examples/python-repos.png" 
+    alt="Python official package information example showing version and dependency details" 
+    style={{ borderRadius: '0.5rem' }}
+  />
+</Frame>
+
 
 ### AUR Package Info
 
 ```
-Show detailed information about the 'heynote' AUR package
+I found this cool note-taking app called 'obsidian' in AUR, is it well-maintained?
 ```
 
-Gets metadata including votes, maintainer, age, and status.
+Gets metadata including votes, maintainer, age, and status to help evaluate package quality.
+
+<Frame caption="Example of analyzing AUR package metadata for Obsidian">
+  <img 
+    src="/images/examples/obsidian-analysis.png" 
+    alt="Obsidian AUR package analysis example showing metadata evaluation" 
+    style={{ borderRadius: '0.5rem' }}
+  />
+</Frame>
+
+### Compare Packages
+
+```
+I'm looking for a good text editor - should I go with the official vim package or is there a better AUR version?
+```
+
+Combines multiple tools for comprehensive comparison between official and AUR packages.
+
+<Frame caption="Example of comparing packages between official and AUR repositories">
+  <img 
+    src="/images/examples/compare_packages.png" 
+    alt="Package comparison example showing official vs AUR package analysis" 
+    style={{ borderRadius: '0.5rem' }}
+  />
+</Frame>
+
+### Check Updates
+
+```
+I haven't updated in a while, what packages need updating on my system?
+```
+
+Uses `check_updates_dry_run` tool (read-only, safe operation) to see pending updates.
+
+<Frame caption="Example of checking system updates">
+  <img 
+    src="/images/examples/check_update_dry_run.png" 
+    alt="System update check example showing pending package updates" 
+    style={{ borderRadius: '0.5rem' }}
+  />
+</Frame>
+
+### Analyze Dependencies
+
+```
+I want to set up a development environment with Docker, what all do I need to install?
+```
+
+Uses the `analyze_dependencies` prompt workflow to map out all required packages.
+
+<Frame caption="Example of analyzing package dependencies for development environment setup">
+  <img 
+    src="/images/examples/dependency-analysis.png" 
+    alt="Dependency analysis example showing package dependency mapping" 
+    style={{ borderRadius: '0.5rem' }}
+  />
+</Frame>
+
+### Have fun exploring
+
+```
+I'm looking for some interesting or lesser-known packages that might be useful for my workflow
+```
+
+Uses AUR search with different sorting methods to discover popular but less mainstream packages.
+
+<Frame caption="Example of discovering hidden gems in AUR">
+  <img 
+    src="/images/examples/hidden-gems.png" 
+    alt="Hidden gems discovery example showing lesser-known but useful packages" 
+    style={{ borderRadius: '0.5rem' }}
+  />
+</Frame>
+
+
 
 ## Security Examples
 
 ### Audit AUR Package
 
 ```
-Audit the AUR package 'yay' for safety
+I found this random package called 'crypto-miner-helper' on AUR, should I trust it?
 ```
 
 Uses the `audit_aur_package` prompt to:
@@ -78,60 +176,44 @@ Uses the `audit_aur_package` prompt to:
 ### Analyze PKGBUILD
 
 ```
-Analyze this PKGBUILD for security issues: [paste PKGBUILD content]
+My friend sent me this PKGBUILD for a custom app, can you check if it's safe to install?
 ```
 
-Uses the `analyze_pkgbuild_safety` tool to detect malicious patterns.
+Uses the `analyze_pkgbuild_safety` tool to detect malicious patterns and suspicious code.
 
-## System Examples (Arch Linux only)
+<Frame caption="Example of PKGBUILD safety analysis">
+  <img 
+    src="/images/examples/analyze_pkgbuild_safety.png" 
+    alt="PKGBUILD safety analysis example showing security threat detection" 
+    style={{ borderRadius: '0.5rem' }}
+  />
+</Frame>
 
-### Check Updates
-
-```
-Check what system updates are available
-```
-
-Uses `check_updates_dry_run` tool (read-only, safe operation).
-
-### Analyze Dependencies
+### Complete Security Audit Workflow
 
 ```
-Analyze dependencies for installing 'docker'
+I want to install Syncthing for file sync, but I'm paranoid about security. Can you do a full security check?
 ```
 
-Uses the `analyze_dependencies` prompt workflow.
+Uses the `audit_aur_package` prompt to perform comprehensive security analysis including metadata evaluation, PKGBUILD analysis, and risk assessment.
 
-## Advanced Examples
+<Frame caption="Example of complete security audit for Syncthing package">
+  <img 
+    src="/images/examples/syncthing-check.png" 
+    alt="Syncthing security audit example showing comprehensive security analysis" 
+    style={{ borderRadius: '0.5rem' }}
+  />
+</Frame>
 
-### Compare Packages
 
-```
-Compare the 'vim' package between official repos and AUR
-```
+## Stuck somewhere?
 
-Combines multiple tools for comprehensive comparison.
-
-### Find Alternatives
-
-```
-I want to install 'nginx'. Search Arch Wiki for best practices and find alternatives in the AUR
-```
-
-Combines wiki search, official packages, and AUR search.
-
-### Security Review Workflow
-
-```
-Run a complete security audit for installing 'syncthing':
-1. Get official package info
-2. Check AUR alternatives
-3. Analyze PKGBUILDs for security
-4. Show comparison
-```
-
-Multi-step workflow combining tools and resources.
-
-## Troubleshooting
+<Accordion title="AUR search returns no results?">
+The package might not exist, or the AUR might be temporarily unavailable. Try:
+- Double-check package name spelling
+- Search for similar names
+- Try a few minutes later
+</Accordion>
 
 <Accordion title="Tool not working?">
 1. Verify uvx installation: `uvx --version`
@@ -147,14 +229,6 @@ Multi-step workflow combining tools and resources.
 3. Verify Arch Wiki and AUR are accessible
 </Accordion>
 
-<Accordion title="AUR search returns no results?">
-The package might not exist, or the AUR might be temporarily unavailable. Try:
-- Double-check package name spelling
-- Search for similar names
-- Try a few minutes later
-</Accordion>
-
-## Next Steps
 
 <Card
   title="Troubleshooting"

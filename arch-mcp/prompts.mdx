@@ -42,7 +42,7 @@ Diagnose and resolve system errors using Arch Wiki knowledge.
 
 **Example Input:**
 ```
-"My system won't boot, I get a grub rescue prompt"
+"Help! My computer won't start up, it's just showing a grub rescue prompt and I don't know what to do"
 ```
 
 **Example Output:**
@@ -82,7 +82,7 @@ Perform comprehensive pre-installation security audit for AUR packages.
 
 **Example Input:**
 ```
-"yay"
+"I want to install yay but I'm worried about security, can you check if it's safe?"
 ```
 
 **Example Output:**
@@ -130,7 +130,7 @@ Plan package installation by mapping dependencies and determining optimal instal
 
 **Example Input:**
 ```
-"docker"
+"I'm trying to set up Docker for my development work, what packages do I need to install?"
 ```
 
 **Example Output:**
@@ -164,7 +164,7 @@ Plan package installation by mapping dependencies and determining optimal instal
 
 ### Troubleshooting Pattern
 ```
-User: "Can't start nginx service, getting permission denied"
+User: "I'm trying to start nginx but it keeps saying permission denied, what's going wrong?"
 AI (using troubleshoot_issue):
   → Searches Wiki: "nginx", "systemd", "permissions"
   → Finds relevant sections
@@ -174,7 +174,7 @@ AI (using troubleshoot_issue):
 
 ### Security Audit Pattern
 ```
-User: "Is package-name safe to install?"
+User: "I found this package called 'crypto-miner-helper' on AUR, should I trust it?"
 AI (using audit_aur_package):
   → Fetches metadata (votes, maintainer, age)
   → Analyzes PKGBUILD for malicious code
@@ -185,7 +185,7 @@ AI (using audit_aur_package):
 
 ### Dependency Analysis Pattern
 ```
-User: "What do I need to install package-name?"
+User: "I want to set up a development environment with Docker, what all do I need to install?"
 AI (using analyze_dependencies):
   → Checks official repos first
   → Maps dependency tree

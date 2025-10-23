@@ -20,6 +20,14 @@ URI-based access to Arch ecosystem data - read documentation, package info, and 
   **5 URI schemes** for accessing Arch Wiki, AUR packages, official repos, and installed packages
 </Card>
 
+<Frame caption="Direct access to Arch Wiki documentation through URI schemes">
+  <img 
+    src="/images/examples/dual-boot-setup.png" 
+    alt="Example of accessing Arch Wiki resources" 
+    style={{ borderRadius: '0.5rem' }}
+  />
+</Frame>
+
 **What you can do:**
 - Access Arch Wiki pages in Markdown format
 - Fetch PKGBUILD files with safety annotations
@@ -38,6 +46,14 @@ Executable functions for search, security analysis, and package installation.
 >
   **8 tools** including search, security analysis, system checks, and secure installation
 </Card>
+
+<Frame caption="Security analysis tools providing comprehensive package safety checks">
+  <img 
+    src="/images/examples/security-review.png" 
+    alt="Example of security analysis tools in action" 
+    style={{ borderRadius: '0.5rem' }}
+  />
+</Frame>
 
 **What you can do:**
 - Search Arch Wiki and AUR packages
@@ -58,6 +74,14 @@ Guided multi-step workflows that combine resources and tools for complex tasks.
   **3 intelligent workflows** for troubleshooting, security audits, and dependency analysis
 </Card>
 
+<Frame caption="Intelligent workflows that combine multiple tools for complex tasks">
+  <img 
+    src="/images/examples/dependency-analysis.png" 
+    alt="Example of dependency analysis prompt workflow" 
+    style={{ borderRadius: '0.5rem' }}
+  />
+</Frame>
+
 **What you can do:**
 - Diagnose system issues with Wiki-guided solutions
 - Audit AUR packages before installation
@@ -65,20 +89,36 @@ Guided multi-step workflows that combine resources and tools for complex tasks.
 
 ## How They Work Together
 
-**Example: Safe AUR Installation**
+**Example: Installing a Custom AUR Package**
+
+Let's say you want to install `neofetch` from the AUR. Here's how the MCP components work together:
+
 ```
-1. Prompt: audit_aur_package → Comprehensive safety check
-   ↓ uses
-2. Tool: analyze_package_metadata_risk → Check trust metrics
-   ↓ uses
-3. Resource: aur://package/info → Fetch metadata
-   ↓ and
-4. Tool: analyze_pkgbuild_safety → Scan for malicious code
-   ↓ uses  
-5. Resource: aur://package/pkgbuild → Fetch PKGBUILD
-   ↓ then
-6. Tool: install_package_secure → Install if safe
+You: "I want to install neofetch from AUR, but I'm concerned about security"
+
+1. The system uses aur://neofetch/pkgbuild to fetch the PKGBUILD file
+   ↓ This gives you the raw build script to inspect
+
+2. The analyze_pkgbuild_safety tool scans the PKGBUILD for:
+   - Dangerous commands like "rm -rf /"
+   - Suspicious downloads or network activity
+   - Obfuscated code or potential malware
+
+3. Meanwhile, aur://neofetch/info provides package metadata:
+   - Popularity votes and maintainer info
+   - Last update date and package age
+   - Community trust indicators
+
+4. The analyze_package_metadata_risk tool evaluates:
+   - Is the maintainer trustworthy?
+   - How popular is this package?
+   - When was it last updated?
+
+5. If everything checks out, install_package_secure handles the installation
+   with additional safety checks and confirmation prompts
 ```
+
+This natural workflow lets you safely explore and install AUR packages while understanding exactly what you're getting into.
 
 ## Quick Reference
 
