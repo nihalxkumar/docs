@@ -8,6 +8,80 @@ icon: "terminal"
 
 Test the Arch MCP Server with these common use cases.
 
+## Security Examples
+
+### Complete Security Audit Workflow
+
+```
+I want to install Syncthing for file sync, but I'm paranoid about security. Can you do a full security check?
+```
+
+Uses the `audit_aur_package` prompt to perform comprehensive security analysis including metadata evaluation, PKGBUILD analysis, and risk assessment.
+
+<Columns cols={2}>
+  <Frame caption="Step 1: Initial Package Search Using Multiple Tools">
+    <img 
+      src="/images/examples/syncthing1.png" 
+      alt="Syncthing security audit step 1 - initial package search and metadata analysis" 
+      style={{ borderRadius: '0.5rem', width: '100%' }}
+    />
+  </Frame>
+  
+  <Frame caption="Step 2: Metadata Analysis of AUR Package">
+    <img 
+      src="/images/examples/syncthing2.png" 
+      alt="Syncthing security audit step 2 - package metadata evaluation and trust score" 
+      style={{ borderRadius: '0.5rem', width: '100%' }}
+    />
+  </Frame>
+  
+  <Frame caption="Step 3: Security Assessment Report Generated">
+    <img 
+      src="/images/examples/syncthing3.png" 
+      alt="Syncthing security audit step 3 - Security Assesment Report Generated" 
+      style={{ borderRadius: '0.5rem', width: '100%' }}
+    />
+  </Frame>
+  
+  <Frame caption="Step 4: Decision left on user with complete guide">
+    <img 
+      src="/images/examples/syncthing4.png" 
+      alt="Syncthing security audit step 4 - comprehensive security assessment and recommendations" 
+      style={{ borderRadius: '0.5rem', width: '100%' }}
+    />
+  </Frame>
+</Columns>
+
+
+
+### Analyze PKGBUILD
+
+```
+My friend sent me this PKGBUILD for a custom app, can you check if it's safe to install?
+```
+
+Uses the `analyze_pkgbuild_safety` tool to detect malicious patterns and suspicious code.
+
+<Frame caption="Example of PKGBUILD safety analysis">
+  <img 
+    src="/images/examples/analyze_pkgbuild_safety.png" 
+    alt="PKGBUILD safety analysis example showing security threat detection" 
+    style={{ borderRadius: '0.5rem' }}
+  />
+</Frame>
+
+### Audit AUR Package
+
+```
+I found this random package called 'crypto-miner-helper' on AUR, should I trust it?
+```
+
+Uses the `audit_aur_package` prompt to:
+1. Fetch package metadata
+2. Analyze PKGBUILD for threats
+3. Provide security recommendations
+
+
 ## Search Examples
 
 ### Search Arch Wiki
@@ -157,79 +231,6 @@ Uses AUR search with different sorting methods to discover popular but less main
     style={{ borderRadius: '0.5rem' }}
   />
 </Frame>
-
-
-
-## Security Examples
-
-### Audit AUR Package
-
-```
-I found this random package called 'crypto-miner-helper' on AUR, should I trust it?
-```
-
-Uses the `audit_aur_package` prompt to:
-1. Fetch package metadata
-2. Analyze PKGBUILD for threats
-3. Provide security recommendations
-
-### Analyze PKGBUILD
-
-```
-My friend sent me this PKGBUILD for a custom app, can you check if it's safe to install?
-```
-
-Uses the `analyze_pkgbuild_safety` tool to detect malicious patterns and suspicious code.
-
-<Frame caption="Example of PKGBUILD safety analysis">
-  <img 
-    src="/images/examples/analyze_pkgbuild_safety.png" 
-    alt="PKGBUILD safety analysis example showing security threat detection" 
-    style={{ borderRadius: '0.5rem' }}
-  />
-</Frame>
-
-### Complete Security Audit Workflow
-
-```
-I want to install Syncthing for file sync, but I'm paranoid about security. Can you do a full security check?
-```
-
-Uses the `audit_aur_package` prompt to perform comprehensive security analysis including metadata evaluation, PKGBUILD analysis, and risk assessment.
-
-<Columns cols={2}>
-  <Frame caption="Step 1: Initial Package Search Using Multiple Tools">
-    <img 
-      src="/images/examples/syncthing1.png" 
-      alt="Syncthing security audit step 1 - initial package search and metadata analysis" 
-      style={{ borderRadius: '0.5rem', width: '100%' }}
-    />
-  </Frame>
-  
-  <Frame caption="Step 2: Metadata Analysis of AUR Package">
-    <img 
-      src="/images/examples/syncthing2.png" 
-      alt="Syncthing security audit step 2 - package metadata evaluation and trust score" 
-      style={{ borderRadius: '0.5rem', width: '100%' }}
-    />
-  </Frame>
-  
-  <Frame caption="Step 3: Security Assessment Report Generated">
-    <img 
-      src="/images/examples/syncthing3.png" 
-      alt="Syncthing security audit step 3 - Security Assesment Report Generated" 
-      style={{ borderRadius: '0.5rem', width: '100%' }}
-    />
-  </Frame>
-  
-  <Frame caption="Step 4: Decision left on user with complete guide">
-    <img 
-      src="/images/examples/syncthing4.png" 
-      alt="Syncthing security audit step 4 - comprehensive security assessment and recommendations" 
-      style={{ borderRadius: '0.5rem', width: '100%' }}
-    />
-  </Frame>
-</Columns>
 
 
 ## Stuck somewhere?
