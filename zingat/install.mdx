@@ -1,0 +1,63 @@
+---
+title: "Local Installation"
+description: "Complete installation guide for Zingat - Setup database, web interface, and CLI client"
+icon: "download"
+---
+
+## Installation Steps
+
+Get started with Zingat in minutes:
+
+<Steps>
+  <Step title="Install Rust">
+    Install Rust using rustup
+    
+    ```bash
+    curl --proto "=https" --tlsv1.2 -sSf https://sh.rustup.rs | sh
+    ```
+  </Step>
+  
+  <Step title="Clone Repository">
+    Clone the Zingat repository
+    
+    ```bash
+    git clone https://github.com/nihalxkumar/zingat
+    cd zingat
+    ```
+  </Step>
+  
+  <Step title="Setup Database">
+    Install SQLx and setup database
+    
+    ```bash
+    cargo install sqlx-cli
+    sqlx database setup
+    ```
+Default database is SQLite but you can use any database. See the <a href="/zingat/databases">Other Databases</a> guide.
+
+</Step>
+</Steps>
+
+## Demo
+
+<Columns cols={2}>
+  <Card title="Web Interface" icon="globe">
+    ```bash
+    cargo run --bin httpd
+    ```
+    Access at http://localhost:8000
+  </Card>
+  
+  <Card title="CLI Client" icon="terminal">
+    ```bash
+    cargo run --bin clipclient
+    ```
+    Command-line paste creation and management. See [CLI Client](/zingat/cli) for details.
+  </Card>
+</Columns>
+
+Prefer the CLI for quick workflows and scripts; use the web UI for occasional pastes.
+
+<Info>
+For production deployments, see the <a href="/zingat/deployment">Deployment Guide</a> for detailed configuration options.
+</Info>

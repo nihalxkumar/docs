@@ -1,0 +1,272 @@
+---
+title: "Zingat Architecture"
+description: "Technical architecture and design decisions behind Zingat - Database schema, performance optimizations, and system design"
+icon: "sitemap"
+---
+
+# Zingat Architecture
+
+Detailed technical architecture and design decisions behind the Zingat pastebin application.
+
+## System Overview
+
+Zingat follows a modular architecture with clear separation of concerns:
+
+```
+┌─────────────────┐    ┌─────────────────┐    ┌─────────────────┐
+│   Web Server    │    │  Business Logic │    │   Database      │
+│   (Rocket)      │◄──►│   (Rust Modules)│◄──►│   (SQLx)        │
+└─────────────────┘    └─────────────────┘    └─────────────────┘
+        │                       │                       │
+        │                       │                       │
+        ▼                       ▼                       ▼
+┌─────────────────┐    ┌─────────────────┐    ┌─────────────────┐
+│   Async Workers │    │   CLI Client    │    │   Migrations    │
+│   (Tokio)       │    │   (Standalone)  │    │   (SQLx CLI)    │
+└─────────────────┘    └─────────────────┘    └─────────────────┘
+```
+
+<Note>
+The modular split allows independent iteration of web, business logic, and data layers.
+</Note>
+
+## Database Schema
+
+### Pastes Table
+
+```sql
+CREATE TABLE pastes (
+    id TEXT PRIMARY KEY,
+    content TEXT NOT NULL,
+    password_hash TEXT,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    expires_at TIMESTAMP,
+    views INTEGER DEFAULT 0,
+    protected BOOLEAN DEFAULT FALSE
+);
+```
+
+### Views Table (For Batch Operations)
+
+```sql
+CREATE TABLE paste_views (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    paste_id TEXT REFERENCES pastes(id),
+    viewed_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    ip_address TEXT
+);
+```
+
+## Key Design Decisions
+
+### 1. Batch Database Operations
+
+Instead of logging each view directly into the database, Zingat defers these operations to separate threads. This design:
+
+- **Reduces Database Contention**: Multiple hits are batched into single database commits
+- **Improves Performance**: Minimizes database write operations
+- **Scales Better**: Handles high traffic more efficiently
+
+**Implementation**:
+
+```rust
+// Views are collected in memory
+let mut view_buffer: Vec<ViewRecord> = Vec::new();
+
+// Periodically flushed to database
+async fn flush_views_to_db(views: Vec<ViewRecord>) {
+    // Batch insert operation
+    sqlx::query!("INSERT INTO paste_views (paste_id, viewed_at, ip_address) VALUES (...)")
+        .execute(&pool)
+        .await;
+}
+```
+
+<Tip>
+Batching is most effective under burst traffic; tune flush intervals to balance latency and write load.
+</Tip>
+
+### 2. Async Architecture
+
+Zingat uses Tokio for async processing, enabling:
+
+- **Non-blocking I/O**: Database operations don't block the web server
+- **High Concurrency**: Handles thousands of simultaneous connections
+- **Efficient Resource Usage**: Minimal overhead for I/O-bound operations
+
+### 3. Password Security
+
+Passwords are hashed using Argon2 before storage:
+
+```rust
+fn hash_password(password: &str) -> Result<String> {
+    let salt = SaltString::generate(&mut OsRng);
+    let argon2 = Argon2::default();
+    let password_hash = argon2.hash_password(password.as_bytes(), &salt)?;
+    Ok(password_hash.to_string())
+}
+```
+
+<Warning>
+Use Argon2 with strong parameters and unique salts; avoid fast hashes like MD5/SHA1 for passwords.
+</Warning>
+
+### 4. ID Generation
+
+Paste IDs are generated using URL-safe base64 encoding:
+
+```rust
+fn generate_id() -> String {
+    let random_bytes: [u8; 12] = rand::random();
+    base64::encode_config(random_bytes, base64::URL_SAFE)
+}
+```
+
+## Performance Optimizations
+
+### Database Connection Pooling
+
+SQLx connection pooling ensures efficient database resource usage:
+
+```rust
+let pool = SqlitePoolOptions::new()
+    .max_connections(10)
+    .connect(&database_url)
+    .await?;
+```
+
+<Info>
+Right-size `max_connections` for your database; too high can degrade performance via context switching.
+</Info>
+
+### Memory Management
+
+Rust's ownership model prevents common issues:
+- No memory leaks
+- No buffer overflows
+- Thread safety guaranteed at compile time
+
+### Response Caching
+
+Frequently accessed pastes are cached in memory:
+
+```rust
+#[derive(Clone)]
+struct PasteCache {
+    inner: Arc<Mutex<HashMap<String, CachedPaste>>>,
+}
+```
+
+## Security Architecture
+
+### Input Validation
+
+All inputs are rigorously validated:
+
+```rust
+fn validate_paste_content(content: &str) -> Result<()> {
+    if content.is_empty() {
+        return Err(Error::EmptyContent);
+    }
+    if content.len() > MAX_CONTENT_SIZE {
+        return Err(Error::ContentTooLarge);
+    }
+    Ok(())
+}
+```
+
+<AccordionGroup>
+  <Accordion title="Threat model at a glance">
+  - **Abuse**: brute force and high-frequency scraping
+  - **Leakage**: unintended access to protected pastes
+  - **Integrity**: tampering with stored content
+  </Accordion>
+  <Accordion title="Mitigations mapped">
+  - **Rate limiting** for abuse
+  - **Hashed secrets** for password protection
+  - **Prepared statements** for injection prevention
+  </Accordion>
+</AccordionGroup>
+
+### Rate Limiting
+
+IP-based rate limiting prevents abuse:
+
+```rust
+struct RateLimiter {
+    requests: Mutex<HashMap<String, Vec<Instant>>>,
+}
+```
+
+### SQL Injection Prevention
+
+SQLx uses prepared statements, preventing SQL injection:
+
+```rust
+sqlx::query!("SELECT * FROM pastes WHERE id = ?", paste_id)
+    .fetch_one(&pool)
+    .await;
+```
+
+## Deployment Architecture
+
+### Containerization
+
+Docker support for easy deployment:
+
+```dockerfile
+FROM rust:1.56 as builder
+WORKDIR /app
+COPY . .
+RUN cargo build --release
+
+FROM debian:bullseye-slim
+COPY --from=builder /app/target/release/httpd /usr/local/bin/
+CMD ["httpd"]
+```
+
+### Cloud Deployment
+
+Support for multiple platforms:
+- **Render**: render.yaml configuration
+- **Railway**: railway.toml configuration
+- **Docker**: Dockerfile included
+
+## Monitoring and Logging
+
+### Structured Logging
+
+JSON-formatted logs for easy parsing:
+
+```rust
+#[derive(Serialize)]
+struct AccessLog {
+    timestamp: DateTime<Utc>,
+    method: String,
+    path: String,
+    status: u16,
+    duration_ms: u64,
+}
+```
+
+### Health Checks
+
+Endpoint for monitoring application health:
+
+```rust
+#[get("/health")]
+async fn health_check() -> &'static str {
+    "OK"
+}
+```
+
+## Future Enhancements
+
+Planned architectural improvements:
+
+- **Redis Integration**: For better caching and session management
+- **CDN Support**: For static asset delivery
+- **Microservices**: Split into smaller, focused services
+- **GraphQL API**: Alternative to REST API
+
+This architecture provides a solid foundation for a secure, high-performance pastebin service that can scale to handle significant traffic while maintaining security and reliability.

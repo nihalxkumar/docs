@@ -1,0 +1,292 @@
+---
+title: "Zingat Development"
+description: "Development setup and contributing guide for Zingat - Code structure, testing, and contribution process"
+icon: "code"
+---
+
+## Development Environment Setup
+
+### Prerequisites
+
+- **Rust 1.56+**: Latest stable Rust version
+- **Cargo**: Rust package manager
+- **SQLx CLI**: For database migrations
+- **Git**: Version control
+
+### Clone Repository
+
+```bash
+git clone https://github.com/nihalxkumar/zingat
+cd zingat
+```
+
+### Install Dependencies
+
+```bash
+# Install SQLx CLI
+cargo install sqlx-cli
+
+# Install development tools
+cargo install cargo-watch  # For hot reloading
+cargo install cargo-audit  # For security audits
+```
+
+<Check>
+Confirm tools with `cargo --version`, `sqlx --version`, and `cargo audit --version`.
+</Check>
+
+### Database Setup
+
+```bash
+# Setup development database
+sqlx database setup
+
+# Run migrations
+sqlx migrate run
+```
+
+### Development Database
+
+Zingat uses SQLite for development by default. The database file is created at `zingat.db` in the project root.
+
+## Codebase Structure
+
+```
+zingat/
+├── src/
+│   ├── main.rs              # HTTP server entry point
+│   ├── lib.rs               # Library crate
+│   ├── bin/
+│   │   ├── httpd.rs         # Web server binary
+│   │   └── clipclient.rs    # CLI client binary
+│   ├── models/              # Data models
+│   ├── routes/              # API routes
+│   ├── utils/               # Utility functions
+│   └── error.rs             # Error handling
+├── migrations/              # Database migrations
+├── templates/               # Handlebars templates
+├── static/                  # Static assets
+├── tests/                   # Integration tests
+└── Cargo.toml              # Project dependencies
+```
+
+### Key Modules
+
+#### Models (`src/models/`)
+
+- `paste.rs`: Paste data model and operations
+- `view.rs`: View tracking and batch operations
+
+#### Routes (`src/routes/`)
+
+- `paste.rs`: API endpoints for paste operations
+- `health.rs`: Health check endpoints
+
+#### Utilities (`src/utils/`)
+
+- `database.rs`: Database connection pooling
+- `security.rs`: Password hashing and validation
+- `id_generator.rs`: Unique ID generation
+
+## Development Workflow
+
+### Running Development Server
+
+```bash
+# Standard run
+cargo run --bin httpd
+
+# With hot reloading
+cargo watch -x "run --bin httpd"
+
+# With debug logging
+RUST_LOG=debug cargo run --bin httpd
+```
+
+### Running CLI Client
+
+```bash
+cargo run --bin clipclient
+```
+
+### Code Formatting
+
+```bash
+# Format code
+cargo fmt
+
+# Check formatting
+cargo fmt -- --check
+```
+
+### Linting
+
+```bash
+# Run clippy linter
+cargo clippy
+
+# Run clippy with warnings
+cargo clippy -- -W clippy::pedantic
+```
+
+## Testing
+
+### Unit Tests
+
+Run unit tests:
+
+```bash
+cargo test
+```
+
+### Integration Tests
+
+Integration tests are in the `tests/` directory:
+
+```bash
+cargo test --test integration
+```
+
+### Test Coverage
+
+Install tarpaulin for test coverage:
+
+```bash
+cargo install cargo-tarpaulin
+cargo tarpaulin --ignore-tests
+```
+
+### Database Testing
+
+Tests use a separate test database:
+
+```bash
+DATABASE_URL=sqlite::memory: cargo test
+```
+
+## Code Quality
+
+### Security Audits
+
+```bash
+# Check for vulnerable dependencies
+cargo audit
+
+# Update dependencies
+cargo update
+```
+
+### Documentation
+
+Generate documentation:
+
+```bash
+# Generate docs
+cargo doc --open
+
+# Check documentation coverage
+cargo doc --no-deps --document-private-items
+```
+
+### Benchmarking
+
+Create benchmarks for performance-critical code:
+
+```rust
+#[bench]
+fn bench_paste_creation(b: &mut Bencher) {
+    b.iter(|| create_test_paste());
+}
+```
+
+## Code Standards
+
+### Rust Conventions
+
+- Follow Rust naming conventions
+- Use `rustfmt` for consistent formatting
+- Apply Clippy recommendations
+- Document public APIs with `///` comments
+
+### Error Handling
+
+- Use Rust's `Result` type for fallible operations
+- Implement custom error types in `error.rs`
+- Provide meaningful error messages
+
+### Database Operations
+
+- Use prepared statements with SQLx
+- Handle database errors appropriately
+- Implement proper connection pooling
+
+### Security
+
+- Hash passwords with Argon2
+- Validate all user input
+- Implement rate limiting
+- Use HTTPS in production
+
+## Performance Considerations
+
+### Database Optimization
+
+- Use batch operations for view tracking
+- Implement proper indexing
+- Monitor query performance
+
+### Memory Management
+
+- Use Rust's ownership system effectively
+- Avoid unnecessary allocations
+- Implement proper caching
+
+### Async Programming
+
+- Use Tokio for async operations
+- Avoid blocking calls in async context
+- Implement proper error handling in async code
+
+## Debugging
+
+### Logging
+
+Enable different log levels:
+
+```bash
+RUST_LOG=debug cargo run --bin httpd
+RUST_LOG=zingat=debug cargo run --bin httpd
+```
+
+<Steps>
+  <Step title="Start the API server">
+    Run `cargo run --bin httpd` and ensure the server listens on the expected port.
+  </Step>
+  <Step title="Smoke test the API">
+    {/* Prefer xh per project rule */}
+    ```bash
+    xh POST http://localhost:8000/api/paste content='dev test' expires_in:=60
+    ```
+  </Step>
+  <Step title="Run CLI client">
+    ```bash
+    cargo run --bin clipclient
+    ```
+  </Step>
+</Steps>
+
+### Debugging Tools
+
+- **println! debugging**: Simple output debugging
+- **dbg! macro**: Quick value inspection
+- **Rust debugger**: Use GDB or LLDB
+- **Tracing**: Structured logging
+
+### Database Inspection
+
+```bash
+# SQLite inspection
+sqlite3 zingat.db
+.tables
+.schema pastes
+```

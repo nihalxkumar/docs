@@ -1,0 +1,263 @@
+---
+title: "Zingat API Reference"
+description: "Complete API documentation for Zingat endpoints - Create, read, update, and manage pastes"
+icon: "code"
+---
+
+# Zingat API Reference
+
+Complete documentation for all Zingat API endpoints. All endpoints return JSON responses and support standard HTTP methods.
+
+## Base URL
+
+All API endpoints are relative to the base URL:
+
+```
+http://localhost:8000/api
+```
+
+## Authentication
+
+Most endpoints do not require authentication. Password-protected pastes require the password to be provided in the request.
+
+## Endpoints
+
+### Create Paste
+
+Create a new paste with optional password protection and expiry.
+
+**Endpoint**: `POST /api/paste`
+
+{/* Structured param/response docs with Mintlify components */}
+<ParamField body="content" type="string" required>
+The text content to store.
+</ParamField>
+<ParamField body="password" type="string">
+Optional password for access protection.
+</ParamField>
+<ParamField body="expires_in" type="number" default="86400">
+Expiry time in seconds (default 24 hours).
+</ParamField>
+
+<RequestExample>
+```bash xh
+# Per project rule, prefer xh over curl
+xh POST http://localhost:8000/api/paste \
+  content='Your paste content here' \
+  password='optional_password' \
+  expires_in:=3600
+```
+</RequestExample>
+
+<ResponseExample>
+```json Success
+{
+  "id": "abc123def456",
+  "url": "http://localhost:8000/paste/abc123def456",
+  "expires_at": "2025-11-05T12:00:00Z"
+}
+```
+</ResponseExample>
+
+### Get Paste
+
+Retrieve a paste by its ID. Password required if paste is protected.
+
+**Endpoint**: `GET /api/paste/{id}`
+
+**Headers** (if password protected):
+
+```
+X-Password: your_password
+```
+
+**Response**:
+
+```json
+{
+  "id": "abc123def456",
+  "content": "Your paste content here",
+  "created_at": "2025-11-05T10:00:00Z",
+  "expires_at": "2025-11-05T12:00:00Z",
+  "views": 42,
+  "protected": true
+}
+```
+
+### Delete Paste
+
+Delete a paste by its ID. Requires password if paste is protected.
+
+**Endpoint**: `DELETE /api/paste/{id}`
+
+**Headers** (if password protected):
+
+```
+X-Password: your_password
+```
+
+**Response**:
+
+```json
+{
+  "success": true,
+  "message": "Paste deleted successfully"
+}
+```
+
+### Get Paste Stats
+
+Get statistics about a paste without retrieving the content.
+
+**Endpoint**: `GET /api/paste/{id}/stats`
+
+**Response**:
+
+```json
+{
+  "id": "abc123def456",
+  "created_at": "2025-11-05T10:00:00Z",
+  "expires_at": "2025-11-05T12:00:00Z",
+  "views": 42,
+  "protected": true
+}
+```
+
+### List Recent Pastes
+
+Get a list of recently created pastes (non-protected only).
+
+**Endpoint**: `GET /api/pastes/recent`
+
+**Query Parameters**:
+- `limit` (number, optional): Number of pastes to return (default: 20, max: 100)
+- `offset` (number, optional): Pagination offset (default: 0)
+
+**Response**:
+
+```json
+{
+  "pastes": [
+    {
+      "id": "abc123def456",
+      "created_at": "2025-11-05T10:00:00Z",
+      "expires_at": "2025-11-05T12:00:00Z",
+      "views": 42,
+      "protected": false
+    }
+  ],
+  "total": 150,
+  "limit": 20,
+  "offset": 0
+}
+```
+
+## Error Responses
+
+All endpoints return standard HTTP status codes with JSON error messages:
+
+### 400 Bad Request
+
+```json
+{
+  "error": "Invalid request parameters",
+  "details": "Content cannot be empty"
+}
+```
+
+### 401 Unauthorized
+
+```json
+{
+  "error": "Password required",
+  "message": "This paste is password protected"
+}
+```
+
+### 403 Forbidden
+
+```json
+{
+  "error": "Invalid password",
+  "message": "The provided password is incorrect"
+}
+```
+
+### 404 Not Found
+
+```json
+{
+  "error": "Paste not found",
+  "message": "The requested paste does not exist or has expired"
+}
+```
+
+### 429 Too Many Requests
+
+```json
+{
+  "error": "Rate limit exceeded",
+  "message": "Too many requests, please try again later"
+}
+```
+
+## Rate Limiting
+
+API endpoints are rate limited to prevent abuse:
+
+- **Create Paste**: 10 requests per minute per IP
+- **Get Paste**: 60 requests per minute per IP
+- **Other endpoints**: 30 requests per minute per IP
+
+## Content Limits
+
+- **Maximum paste size**: 10MB (configurable)
+- **Minimum content length**: 1 character
+- **Maximum expiry**: 30 days (2592000 seconds)
+
+## Example Usage
+
+{/* Multi-client examples using CodeGroup */}
+<CodeGroup>
+```bash xh
+# Create a paste (preferred tooling)
+xh POST http://localhost:8000/api/paste \
+  content='Hello, this is a test paste!' \
+  password='secret123' \
+  expires_in:=3600
+```
+
+```javascript Node.js
+await fetch('http://localhost:8000/api/paste', {
+  method: 'POST',
+  headers: { 'Content-Type': 'application/json' },
+  body: JSON.stringify({
+    content: 'Hello, this is a test paste!',
+    password: 'secret123',
+    expires_in: 3600
+  })
+});
+```
+
+```python Python
+import requests
+requests.post('http://localhost:8000/api/paste', json={
+  'content': 'Hello, this is a test paste!',
+  'password': 'secret123',
+  'expires_in': 3600
+})
+```
+</CodeGroup>
+
+## Response Codes Summary
+
+| Code | Description |
+|------|-------------|
+| 200 | Success |
+| 201 | Created successfully |
+| 400 | Bad request parameters |
+| 401 | Password required |
+| 403 | Invalid password |
+| 404 | Paste not found |
+| 429 | Rate limit exceeded |
+| 500 | Internal server error |

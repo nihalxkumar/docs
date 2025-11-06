@@ -1,0 +1,58 @@
+---
+title: "Zingat"
+description: "https://zingat.onrender.com/"
+icon: "clipboard"
+---
+
+## Key Features
+
+- **Secure Text Sharing**: End-to-end encrypted paste creation
+- **Password Protection**: Optional password-based access control
+- **Automatic Expiry**: Set custom expiration times (1h, 24h, 7d, 30d)
+- **High Performance**: Rust-powered backend with async processing
+- **Batch Operations**: Optimized database writes for high traffic
+- **Multiple Interfaces**: Web UI and CLI client support
+
+## Tech Stack
+
+**Backend**
+- Rust 1.56+
+- Rocket web framework
+- SQLx for database operations
+- Tokio for async runtime
+  
+**Frontend**
+- Handlebars templates
+- Custom CSS styling
+- Responsive design
+
+
+## Performance Highlights
+
+- **Batch Database Operations**: Instead of logging each view directly, operations are deferred to separate threads, batching multiple hits into single database commits
+- **Async Processing**: Non-blocking I/O operations for maximum throughput
+- **Memory Safe**: Rust's ownership model prevents common security vulnerabilities
+- **Minimal Dependencies**: Lean dependency tree for faster builds and smaller footprint
+
+## Architecture
+
+Zingat features a clean, modular architecture:
+
+- **Web Server**: Rocket framework for HTTP endpoints
+- **Database Layer**: SQLx with connection pooling
+- **Business Logic**: Separate modules for paste management
+- **Async Workers**: Background threads for batch operations
+- **CLI Interface**: Standalone client for terminal usage
+
+<CardGroup cols={3}>
+  <Card title="Install" icon="download" href="/zingat/install">
+    Step-by-step setup for local environments.
+  </Card>
+  <Card title="Architecture" icon="sitemap" href="/zingat/architecture">
+    Deep dive into system design, performance, and security choices.
+  </Card>
+  <Card title="API Reference" icon="code" href="/zingat/api-reference">
+    Full REST API with request/response examples and parameters.
+  </Card>
+{/* Add more cards here if new sections are introduced */}
+</CardGroup>

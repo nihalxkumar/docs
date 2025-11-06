@@ -1,0 +1,101 @@
+---
+title: "Other Databases"
+description: "Supported database backends for Zingat and how to configure them"
+icon: "database"
+---
+
+# Other Databases
+
+Zingat primarily targets PostgreSQL and SQLite, but the SQLx layer also supports other SQL backends. This page lists the commonly used alternatives and how to point Zingat at them.
+
+<Tip>
+Choose PostgreSQL for production; prefer SQLite for lightweight, single-node deployments and tests.
+</Tip>
+
+## Environment variable
+
+Zingat reads the connection string from the `DATABASE_URL` environment variable.
+
+```bash
+# DEBUG: Point Zingat to a different database by changing DATABASE_URL
+export DATABASE_URL="<driver>://<user>:<password>@<host>:<port>/<database>"
+```
+
+## PostgreSQL)
+
+```bash
+# DEBUG: Standard Postgres connection string
+export DATABASE_URL="postgres://user:password@localhost:5432/zingat"
+```
+
+- **Why use it**: Mature, robust, great concurrency, rich SQL features
+- **Notes**: Ensure `sqlx` Postgres feature is enabled at build-time
+
+## SQLite (lightweight)
+
+```bash
+# DEBUG: File-backed SQLite database; suitable for single-node setups
+export DATABASE_URL="sqlite://./zingat.db"
+```
+
+- **Why use it**: Zero-config, fast for small deployments and CI
+- **Notes**: Concurrency is limited; prefer PostgreSQL for multi-user traffic
+
+## MySQL / MariaDB
+
+```bash
+# DEBUG: MySQL or MariaDB connection string
+export DATABASE_URL="mysql://user:password@localhost:3306/zingat"
+```
+
+- **Why use it**: Existing infra or operational preference
+- **Notes**: Ensure `sqlx` MySQL feature is enabled; verify SQL dialect differences
+
+## Microsoft SQL Server
+
+```bash
+# DEBUG: MSSQL connection string
+export DATABASE_URL="mssql://user:password@localhost:1433;encrypt=true;TrustServerCertificate=true;database=zingat"
+```
+
+- **Why use it**: Enterprise environments standardized on SQL Server
+- **Notes**: Some SQL features differ; test migrations and queries
+
+## CockroachDB (Postgres wire-compatible)
+
+```bash
+# DEBUG: CockroachDB uses Postgres wire protocol
+export DATABASE_URL="postgres://user:password@localhost:26257/zingat?sslmode=disable"
+```
+
+- **Why use it**: Horizontal scalability with Postgres compatibility
+- **Notes**: Validate transactional semantics and any `SERIAL`/`BIGSERIAL` usage
+
+## Verify connectivity
+
+Use `xh` to sanity-check the API after switching databases.
+
+```bash
+# DEBUG: Health-check and simple API call with xh (project rule)
+xh GET http://localhost:8000/health
+xh POST http://localhost:8000/api/paste content='db test' expires_in:=60
+```
+
+## Migrations
+
+Run migrations after changing `DATABASE_URL`:
+
+```bash
+# DEBUG: Re-run SQLx migrations against the selected backend
+cargo install sqlx-cli # if not installed
+sqlx database create || true
+sqlx migrate run
+```
+
+<Note>
+If you switch database engines, re-run migrations from a clean database to avoid dialect drift.
+</Note>
+
+
+
+

@@ -1,0 +1,81 @@
+---
+title: "CLI Client"
+description: "Command-line interface for Zingat - Create and manage pastes from the terminal"
+icon: "terminal"
+---
+
+# CLI Client
+
+Zingat includes a command-line client (`clipclient`) for creating and managing pastes from the terminal.
+
+## Installation
+
+The CLI client is built as part of the Zingat project:
+
+```bash
+# Build the CLI client
+cargo build --release --bin clipclient
+
+# Install globally (optional)
+cargo install --path . --bin clipclient
+```
+
+```
+Zingat API Client
+
+USAGE:
+    clipclient --api-key <api-key> [addr] <SUBCOMMAND>
+
+FLAGS:
+    -h, --help       Prints help information
+    -V, --version    Prints version information
+
+OPTIONS:
+        --api-key <api-key>    
+
+ARGS:
+    <addr>     [env: ZINGAT_ADDR=]  [default: http://127.0.0.1:8000]
+
+SUBCOMMANDS:
+    get       
+    help      Prints this message or the help of the given subcommand(s)
+    new       
+    update    
+```
+
+## Basic Usage
+
+```bash
+clipclient --api-key <api-key> [addr] <SUBCOMMAND>
+```
+
+**Options:**
+- `--api-key <api-key>`: API key for authentication (required)
+- `[addr]`: Server address (optional, defaults to `http://127.0.0.1:8000`)
+  - Can also be set via `ZINGAT_ADDR` environment variable
+
+**Subcommands:**
+- `get`: Retrieve a paste by ID
+- `new`: Create a new paste
+- `update`: Update an existing paste
+- `help`: Show help information
+
+## Examples
+
+```bash
+# Create a new paste (using default address)
+clipclient --api-key your-api-key new "Hello from CLI"
+
+# Create a paste on a remote server
+clipclient --api-key your-api-key https://zingat.example.com new "Remote paste"
+
+# Get a paste by ID
+clipclient --api-key your-api-key get <paste-id>
+
+# Update an existing paste
+clipclient --api-key your-api-key update <paste-id> "Updated content"
+
+# Use environment variable for address
+export ZINGAT_ADDR=https://zingat.example.com
+clipclient --api-key your-api-key new "Content"
+```

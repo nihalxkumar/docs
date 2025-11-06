@@ -1,0 +1,333 @@
+---
+title: "Zingat Deployment"
+description: "Production deployment guide for Zingat - Docker, systemd, and cloud deployment options"
+icon: "rocket"
+---
+
+# Zingat Deployment Guide
+
+Complete production deployment instructions for Zingat. This guide covers Docker deployment, systemd service setup, and production configuration.
+
+## Docker Deployment
+
+Zingat includes a Dockerfile for containerized deployment.
+
+### Build Docker Image
+
+```bash
+docker build -t zingat .
+```
+
+### Run Docker Container
+
+```bash
+docker run -d \
+  -p 8000:8000 \
+  -e DATABASE_URL=sqlite:///data/zingat.db \
+  -v zingat_data:/data \
+  --name zingat \
+  zingat
+```
+
+### Docker Compose
+
+Create a `docker-compose.yml` file:
+
+```yaml
+version: '3.8'
+services:
+  zingat:
+    build: .
+    ports:
+      - "8000:8000"
+    environment:
+      - DATABASE_URL=sqlite:///data/zingat.db
+      - PORT=8000
+      - RUST_LOG=info
+    volumes:
+      - zingat_data:/data
+    restart: unless-stopped
+
+volumes:
+  zingat_data:
+```
+
+Run with Docker Compose:
+
+```bash
+docker-compose up -d
+```
+
+## Systemd Service
+
+For Linux servers, create a systemd service file.
+
+### Create Service File
+
+Create `/etc/systemd/system/zingat.service`:
+
+```ini
+[Unit]
+Description=Zingat Pastebin Service
+After=network.target
+
+[Service]
+Type=simple
+User=zingat
+Group=zingat
+WorkingDirectory=/opt/zingat
+Environment="DATABASE_URL=sqlite:///opt/zingat/data/zingat.db"
+Environment="PORT=8000"
+Environment="RUST_LOG=info"
+ExecStart=/opt/zingat/target/release/httpd
+Restart=always
+RestartSec=5
+
+[Install]
+WantedBy=multi-user.target
+```
+
+### Setup Steps
+
+1. **Create user and directory**:
+   ```bash
+   sudo useradd --system --create-home --shell /usr/sbin/nologin zingat
+   sudo mkdir -p /opt/zingat/data
+   sudo chown zingat:zingat /opt/zingat/data
+   ```
+
+2. **Copy binaries**:
+   ```bash
+   sudo cp target/release/httpd /opt/zingat/
+   sudo cp target/release/clipclient /opt/zingat/
+   sudo chown zingat:zingat /opt/zingat/*
+   ```
+
+3. **Enable and start service**:
+   ```bash
+   sudo systemctl daemon-reload
+   sudo systemctl enable zingat
+   sudo systemctl start zingat
+   ```
+
+4. **Check status**:
+   ```bash
+   sudo systemctl status zingat
+   ```
+
+## Production Configuration
+
+### Environment Variables
+
+Create a production `.env` file:
+
+```bash
+DATABASE_URL=sqlite:///var/lib/zingat/zingat.db
+PORT=8000
+RUST_LOG=info
+MAX_PASTE_SIZE=10485760
+RATE_LIMIT_REQUESTS=60
+RATE_LIMIT_WINDOW=60
+```
+
+### Database Configuration
+
+#### SQLite Production Tips
+
+- Use absolute paths for database file
+- Ensure proper file permissions
+- Regular backups recommended
+
+```bash
+DATABASE_URL=sqlite:///var/lib/zingat/zingat.db
+```
+
+#### PostgreSQL Production Setup
+
+For higher traffic, use PostgreSQL:
+
+```bash
+DATABASE_URL=postgres://username:password@localhost:5432/zingat
+```
+
+PostgreSQL configuration:
+- Enable connection pooling
+- Set appropriate memory settings
+- Configure backups
+
+### Security Hardening
+
+#### File Permissions
+
+```bash
+sudo chown zingat:zingat /opt/zingat
+sudo chmod 750 /opt/zingat
+sudo chown zingat:zingat /var/lib/zingat
+sudo chmod 700 /var/lib/zingat
+```
+
+#### Firewall Configuration
+
+```bash
+sudo ufw allow 8000/tcp
+sudo ufw enable
+```
+
+### Reverse Proxy Setup
+
+#### Nginx Configuration
+
+Create `/etc/nginx/sites-available/zingat`:
+
+```nginx
+server {
+    listen 80;
+    server_name your-domain.com;
+
+    location / {
+        proxy_pass http://localhost:8000;
+        proxy_set_header Host $host;
+        proxy_set_header X-Real-IP $remote_addr;
+        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+        proxy_set_header X-Forwarded-Proto $scheme;
+    }
+
+    # Rate limiting
+    limit_req_zone $binary_remote_addr zone=zingat:10m rate=10r/s;
+    location /api/paste {
+        limit_req zone=zingat burst=20 nodelay;
+        proxy_pass http://localhost:8000;
+    }
+}
+```
+
+Enable the site:
+
+```bash
+sudo ln -s /etc/nginx/sites-available/zingat /etc/nginx/sites-enabled/
+sudo nginx -t
+sudo systemctl reload nginx
+```
+
+#### SSL with Let's Encrypt
+
+```bash
+sudo apt install certbot python3-certbot-nginx
+sudo certbot --nginx -d your-domain.com
+```
+
+## Monitoring and Logging
+
+### Log Management
+
+Zingat outputs structured JSON logs. Use log rotation:
+
+```bash
+sudo apt install logrotate
+```
+
+Create `/etc/logrotate.d/zingat`:
+
+```
+/var/log/zingat/*.log {
+    daily
+    missingok
+    rotate 7
+    compress
+    delaycompress
+    notifempty
+    copytruncate
+}
+```
+
+### Health Checks
+
+Monitor service health:
+
+```bash
+curl -f http://localhost:8000/health || exit 1
+```
+
+### Performance Monitoring
+
+Use tools like:
+- **htop** for system monitoring
+- **nginx status** for web server metrics
+- **sqlite3** for database health
+
+## Backup Strategy
+
+### Database Backups
+
+#### SQLite Backup
+
+```bash
+# Daily backup script
+sqlite3 /var/lib/zingat/zingat.db ".backup '/backup/zingat-$(date +%Y%m%d).db'"
+```
+
+#### PostgreSQL Backup
+
+```bash
+pg_dump zingat > zingat-backup-$(date +%Y%m%d).sql
+```
+
+### Configuration Backups
+
+Backup important files:
+- Service configuration
+- Environment files
+- SSL certificates
+
+## Scaling Considerations
+
+### Vertical Scaling
+
+- Increase server resources (CPU, RAM)
+- Use faster storage for database
+- Optimize database configuration
+
+### Horizontal Scaling
+
+For very high traffic:
+- Use PostgreSQL instead of SQLite
+- Implement load balancing
+- Consider Redis for caching
+
+## Troubleshooting Production
+
+### Common Issues
+
+1. **Port conflicts**: Check if port 8000 is already in use
+2. **Permission errors**: Verify file ownership and permissions
+3. **Database errors**: Check database connection string
+4. **Memory issues**: Monitor system resources
+
+### Debug Mode
+
+Enable debug logging temporarily:
+
+```bash
+export RUST_LOG=debug
+./target/release/httpd
+```
+
+## Maintenance
+
+### Regular Updates
+
+- Keep Rust and dependencies updated
+- Monitor security advisories
+- Apply security patches promptly
+
+### Database Maintenance
+
+```bash
+# SQLite vacuum
+sqlite3 zingat.db "VACUUM;"
+
+# PostgreSQL maintenance
+vacuumdb zingat
+```
+
+This deployment guide provides a solid foundation for running Zingat in production environments with proper security, monitoring, and maintenance practices.
