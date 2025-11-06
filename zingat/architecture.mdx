@@ -32,30 +32,32 @@ The modular split allows independent iteration of web, business logic, and data 
 
 ## Database Schema
 
-### Pastes Table
+### Clips Table
 
 ```sql
-CREATE TABLE pastes (
-    id TEXT PRIMARY KEY,
-    content TEXT NOT NULL,
-    password_hash TEXT,
-    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    expires_at TIMESTAMP,
-    views INTEGER DEFAULT 0,
-    protected BOOLEAN DEFAULT FALSE
+CREATE TABLE IF NOT EXISTS clips (
+    clip_id   TEXT PRIMARY KEY NOT NULL,
+    shortcode TEXT UNIQUE NOT NULL,
+    content   TEXT NOT NULL,
+    title     TEXT,
+    posted    DATETIME NOT NULL,
+    expires   DATETIME,
+    password  TEXT,
+    hits      BIGINT NOT NULL
 );
 ```
 
-### Views Table (For Batch Operations)
+### API Keys Table
 
 ```sql
-CREATE TABLE paste_views (
-    id INTEGER PRIMARY KEY AUTOINCREMENT,
-    paste_id TEXT REFERENCES pastes(id),
-    viewed_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    ip_address TEXT
+CREATE TABLE IF NOT EXISTS api_keys (
+    api_key BLOB PRIMARY KEY
 );
 ```
+
+<Note>
+The `clips` table stores all paste content with metadata. The `hits` field tracks view counts and is updated asynchronously via batched operations for performance.
+</Note>
 
 ## Key Design Decisions
 
@@ -99,7 +101,7 @@ Zingat uses Tokio for async processing, enabling:
 Passwords are hashed using Argon2 before storage:
 
 ```rust
-fn hash_password(password: &str) -> Result<String> {
+fn hash_password(password: &str) -> Result<Strisng> {
     let salt = SaltString::generate(&mut OsRng);
     let argon2 = Argon2::default();
     let password_hash = argon2.hash_password(password.as_bytes(), &salt)?;
@@ -111,16 +113,41 @@ fn hash_password(password: &str) -> Result<String> {
 Use Argon2 with strong parameters and unique salts; avoid fast hashes like MD5/SHA1 for passwords.
 </Warning>
 
-### 4. ID Generation
+### 4. Shortcode Generation
 
-Paste IDs are generated using URL-safe base64 encoding:
+Clip shortcodes are generated as unique identifiers for URL sharing. The system ensures uniqueness through database constraints and collision handling.
+s
+### 5. Project Structure
 
-```rust
-fn generate_id() -> String {
-    let random_bytes: [u8; 12] = rand::random();
-    base64::encode_config(random_bytes, base64::URL_SAFE)
-}
-```
+Zingat follows a layered architecture with clear separation:
+
+**Data Layer** (`src/lib/data/`)
+- `mod.rs`: Database connection and configuration
+- `model.rs`: Database models and entities
+- `query.rs`: Database queries and operations
+
+**Domain Layer** (`src/lib/domain/`)
+- `clip/`: Core business logic for clips
+  - `field/`: Newtype wrappers for type safety (ClipId, Content, Expires, Hits, Password, Posted, Shortcode, Title)
+  - `mod.rs`: Main Clip struct and ClipError enum
+- `maintenance.rs`: Background maintenance tasks
+- `time.rs`: Time-related utilities
+
+**Service Layer** (`src/lib/service/`)
+- `action.rs`: Business logic actions
+- `ask.rs`: Request/response DTOs for API operations
+
+**Web Layer** (`src/lib/web/`)
+- `api.rs`: REST API endpoints and authentication
+- `ctx.rs`: Template context structures
+- `form.rs`: Form handling and validation
+- `hitcounter.rs`: Asynchronous hit counting system
+- `http.rs`: Web UI routes and handlers
+- `renderer.rs`: Template rendering engine
+
+<Info>
+The newtype pattern is used extensively for type safety, preventing accidental mixing of different string types (e.g., ClipId vs Shortcode).
+</Info>
 
 ## Performance Optimizations
 
@@ -146,16 +173,14 @@ Rust's ownership model prevents common issues:
 - No buffer overflows
 - Thread safety guaranteed at compile time
 
-### Response Caching
+### Hit Counter Batching
 
-Frequently accessed pastes are cached in memory:
+Hit counting uses an asynchronous batching system:
 
-```rust
-#[derive(Clone)]
-struct PasteCache {
-    inner: Arc<Mutex<HashMap<String, CachedPaste>>>,
-}
-```
+- Hits are deferred to separate threads
+- Multiple hits are batched into single database commits
+- Significantly improves performance and reduces database contention
+- Implemented via `hitcounter.rs` module with crossbeam channels
 
 ## Security Architecture
 
@@ -164,16 +189,33 @@ struct PasteCache {
 All inputs are rigorously validated:
 
 ```rust
-fn validate_paste_content(content: &str) -> Result<()> {
+fn validate_clip_content(content: &str) -> Result<()> {
     if content.is_empty() {
-        return Err(Error::EmptyContent);
+        return Err(ClipError::EmptyContent);
     }
-    if content.len() > MAX_CONTENT_SIZE {
-        return Err(Error::ContentTooLarge);
-    }
+    // Additional validation logic
     Ok(())
 }
 ```
+
+### Error Handling
+
+Zingat uses comprehensive error types:
+
+**ClipError Variants**:
+- `NotFound`: Clip doesn't exist
+- `AlreadyExists`: Shortcode collision
+- `Expired`: Clip has passed expiration date
+- `InvalidPassword`: Wrong password provided
+- `InvalidTitle`: Title validation failed
+- `EmptyContent`: Content cannot be empty
+- `InvalidDate`: Date parsing error
+
+**API Errors**:
+- `NotFound`: Resource not found (404)
+- `Server`: Internal server error (500)
+- `User`: Client error (401)
+- `KeyError`: API key issues (400)
 
 <AccordionGroup>
   <Accordion title="Threat model at a glance">
@@ -203,7 +245,7 @@ struct RateLimiter {
 SQLx uses prepared statements, preventing SQL injection:
 
 ```rust
-sqlx::query!("SELECT * FROM pastes WHERE id = ?", paste_id)
+sqlx::query!("SELECT * FROM clips WHERE shortcode = ?", shortcode)
     .fetch_one(&pool)
     .await;
 ```

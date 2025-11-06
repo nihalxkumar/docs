@@ -47,46 +47,91 @@ sqlx migrate run
 
 ### Development Database
 
-Zingat uses SQLite for development by default. The database file is created at `zingat.db` in the project root.
+Zingat uses SQLite for development by default. The database file is created at `data.db` in the project root (default connection string: `sqlite:data.db`).
 
 ## Codebase Structure
 
 ```
 zingat/
 ├── src/
-│   ├── main.rs              # HTTP server entry point
-│   ├── lib.rs               # Library crate
 │   ├── bin/
 │   │   ├── httpd.rs         # Web server binary
 │   │   └── clipclient.rs    # CLI client binary
-│   ├── models/              # Data models
-│   ├── routes/              # API routes
-│   ├── utils/               # Utility functions
-│   └── error.rs             # Error handling
-├── migrations/              # Database migrations
+│   └── lib/
+│       ├── data/             # Data layer
+│       │   ├── mod.rs        # Database connection and configuration
+│       │   ├── model.rs      # Database models and entities
+│       │   └── query.rs      # Database queries and operations
+│       ├── domain/           # Domain layer
+│       │   ├── clip/         # Core business logic for clips
+│       │   │   ├── field/    # Newtype wrappers for type safety
+│       │   │   │   ├── clip_id.rs
+│       │   │   │   ├── content.rs
+│       │   │   │   ├── expires.rs
+│       │   │   │   ├── hits.rs
+│       │   │   │   ├── password.rs
+│       │   │   │   ├── posted.rs
+│       │   │   │   ├── shortcode.rs
+│       │   │   │   └── title.rs
+│       │   │   └── mod.rs    # Main Clip struct and ClipError enum
+│       │   ├── maintenance.rs  # Background maintenance tasks
+│       │   └── time.rs       # Time-related utilities
+│       ├── service/          # Service layer
+│       │   ├── action.rs     # Business logic actions
+│       │   └── ask.rs        # Request/response DTOs
+│       └── web/              # Web layer
+│           ├── api.rs        # REST API endpoints and authentication
+│           ├── ctx.rs        # Template context structures
+│           ├── form.rs       # Form handling and validation
+│           ├── hitcounter.rs # Asynchronous hit counting system
+│           ├── http.rs       # Web UI routes and handlers
+│           ├── mod.rs        # Web module exports
+│           └── renderer.rs   # Template rendering engine
+├── migrations/               # Database migrations
 ├── templates/               # Handlebars templates
+│   ├── base.hbs
+│   ├── home.hbs
+│   ├── clip.hbs
+│   ├── clip_need_password.hbs
+│   ├── error_box.hbs
+│   ├── header.hbs
+│   └── footer.hbs
 ├── static/                  # Static assets
+│   ├── zingat.css
+│   ├── tiny-date-picker.min.js
+│   └── logo.svg
 ├── tests/                   # Integration tests
 └── Cargo.toml              # Project dependencies
 ```
 
 ### Key Modules
 
-#### Models (`src/models/`)
+#### Data Layer (`src/lib/data/`)
 
-- `paste.rs`: Paste data model and operations
-- `view.rs`: View tracking and batch operations
+- `mod.rs`: Database connection pooling and configuration
+- `model.rs`: Database models matching the `clips` and `api_keys` tables
+- `query.rs`: SQL queries using SQLx with prepared statements
 
-#### Routes (`src/routes/`)
+#### Domain Layer (`src/lib/domain/`)
 
-- `paste.rs`: API endpoints for paste operations
-- `health.rs`: Health check endpoints
+- `clip/mod.rs`: Core Clip struct and ClipError enum with all error variants
+- `clip/field/`: Newtype wrappers for type safety (ClipId, Content, Expires, Hits, Password, Posted, Shortcode, Title)
+- `maintenance.rs`: Background tasks for expired clip cleanup
+- `time.rs`: Time utilities for date parsing and expiration checks
 
-#### Utilities (`src/utils/`)
+#### Service Layer (`src/lib/service/`)
 
-- `database.rs`: Database connection pooling
-- `security.rs`: Password hashing and validation
-- `id_generator.rs`: Unique ID generation
+- `action.rs`: Business logic for clip operations (create, read, update)
+- `ask.rs`: Request/response DTOs for API operations
+
+#### Web Layer (`src/lib/web/`)
+
+- `api.rs`: REST API endpoints (`/api/clip/*`) with API key authentication
+- `http.rs`: Web UI routes (`/`, `/clip/<shortcode>`, `/clip/raw/<shortcode>`)
+- `hitcounter.rs`: Asynchronous hit counting with batching via crossbeam channels
+- `form.rs`: Form handling and validation for web UI
+- `renderer.rs`: Handlebars template rendering
+- `ctx.rs`: Template context structures
 
 ## Development Workflow
 
@@ -156,13 +201,64 @@ cargo install cargo-tarpaulin
 cargo tarpaulin --ignore-tests
 ```
 
-### Database Testing
+## Templates and Static Assets
 
-Tests use a separate test database:
+### Templates
 
-```bash
-DATABASE_URL=sqlite::memory: cargo test
-```
+Zingat uses Handlebars templates located in the `templates/` directory:
+
+- **`base.hbs`**: Base template layout with common HTML structure
+- **`home.hbs`**: Home page with clip creation form
+- **`clip.hbs`**: Clip display page showing content and metadata
+- **`clip_need_password.hbs`**: Password prompt for protected clips
+- **`error_box.hbs`**: Error display component
+- **`header.hbs`**: Page header component
+- **`footer.hbs`**: Page footer component
+
+Templates are rendered via the `renderer.rs` module which provides template context and error handling.
+
+### Static Assets
+
+Static files are served from the `static/` directory:
+
+- **`zingat.css`**: Custom CSS styling for the web interface
+- **`tiny-date-picker.min.js`**: JavaScript library for date picker functionality
+- **`logo.svg`**: Zingat logo (available in light and dark variants)
+
+Static assets are served directly by Rocket and don't require template rendering.
+
+## Dependencies Overview
+
+Key dependencies used in Zingat:
+
+**Core**:
+- `serde`, `serde_json`: Serialization
+- `thiserror`: Error handling
+- `chrono`: Date/time handling
+- `uuid`: UUID generation
+
+**Web**:
+- `rocket`: Web framework (0.5.0-rc.1)
+- `handlebars`: Template engine (4.x)
+- `tokio`: Async runtime (1.8.0)
+
+**Database**:
+- `sqlx`: Database toolkit (0.8.2)
+
+**CLI**:
+- `structopt`: Command-line argument parsing
+- `dotenv`: Environment variable loading
+
+**Utilities**:
+- `derive_more`: Additional derive macros
+- `rand`: Random number generation
+- `base64`: Base64 encoding/decoding
+- `reqwest`: HTTP client for CLI
+- `strum`: String enum conversions
+
+**Concurrency**:
+- `crossbeam-channel`: Multi-producer, multi-consumer channels for hit counter batching
+- `parking_lot`: Faster mutex implementation
 
 ## Code Quality
 
@@ -210,9 +306,24 @@ fn bench_paste_creation(b: &mut Bencher) {
 
 ### Error Handling
 
-- Use Rust's `Result` type for fallible operations
-- Implement custom error types in `error.rs`
-- Provide meaningful error messages
+Zingat uses comprehensive error types with the `thiserror` crate:
+
+**ClipError Variants** (defined in `src/lib/domain/clip/mod.rs`):
+- `NotFound`: Clip doesn't exist
+- `AlreadyExists`: Shortcode collision
+- `Expired`: Clip has passed expiration date
+- `InvalidPassword`: Wrong password provided
+- `InvalidTitle`: Title validation failed
+- `EmptyContent`: Content cannot be empty
+- `InvalidDate`: Date parsing error
+
+**API Errors**:
+- `NotFound`: Resource not found (404)
+- `Server`: Internal server error (500)
+- `User`: Client error (401)
+- `KeyError`: API key issues (400)
+
+All errors implement `std::error::Error` and can be converted to appropriate HTTP responses.
 
 ### Database Operations
 

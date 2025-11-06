@@ -6,23 +6,24 @@ icon: "clipboard"
 
 ## Key Features
 
-- **Secure Text Sharing**: End-to-end encrypted paste creation
+- **Secure Text Sharing**: Password-protected clip creation with optional expiry
 - **Password Protection**: Optional password-based access control
-- **Automatic Expiry**: Set custom expiration times (1h, 24h, 7d, 30d)
+- **Automatic Expiry**: Set custom expiration dates (YYYY-MM-DD format)
 - **High Performance**: Rust-powered backend with async processing
-- **Batch Operations**: Optimized database writes for high traffic
+- **Batch Operations**: Optimized database writes for high traffic via asynchronous hit counting
 - **Multiple Interfaces**: Web UI and CLI client support
+- **API Access**: RESTful API with API key authentication
 
 ## Tech Stack
 
 **Backend**
-- Rust 1.56+
-- Rocket web framework
-- SQLx for database operations
-- Tokio for async runtime
+- Rust (Edition 2021)
+- Rocket web framework (0.5.0-rc.1)
+- SQLx for database operations (0.8.2)
+- Tokio for async runtime (1.8.0)
   
 **Frontend**
-- Handlebars templates
+- Handlebars templates (4.x)
 - Custom CSS styling
 - Responsive design
 
@@ -36,13 +37,15 @@ icon: "clipboard"
 
 ## Architecture
 
-Zingat features a clean, modular architecture:
+Zingat features a clean, layered architecture:
 
 - **Web Server**: Rocket framework for HTTP endpoints
-- **Database Layer**: SQLx with connection pooling
-- **Business Logic**: Separate modules for paste management
-- **Async Workers**: Background threads for batch operations
-- **CLI Interface**: Standalone client for terminal usage
+- **Database Layer**: SQLx with connection pooling (SQLite default)
+- **Domain Layer**: Core business logic with newtype wrappers for type safety
+- **Service Layer**: Business actions and DTOs
+- **Web Layer**: API routes, web UI, and template rendering
+- **Async Workers**: Background threads for batch operations (hit counting)
+- **CLI Interface**: Standalone client (`clipclient`) for terminal usage
 
 <CardGroup cols={3}>
   <Card title="Install" icon="download" href="/zingat/install">

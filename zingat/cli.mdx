@@ -1,12 +1,12 @@
 ---
 title: "CLI Client"
-description: "Command-line interface for Zingat - Create and manage pastes from the terminal"
+description: "Command-line interface for Zingat - Create and manage clips from the terminal"
 icon: "terminal"
 ---
 
 # CLI Client
 
-Zingat includes a command-line client (`clipclient`) for creating and managing pastes from the terminal.
+Zingat includes a command-line client (`clipclient`) for creating and managing clips from the terminal.
 
 ## Installation
 
@@ -55,27 +55,65 @@ clipclient --api-key <api-key> [addr] <SUBCOMMAND>
   - Can also be set via `ZINGAT_ADDR` environment variable
 
 **Subcommands:**
-- `get`: Retrieve a paste by ID
-- `new`: Create a new paste
-- `update`: Update an existing paste
+- `get`: Retrieve a clip by shortcode
+- `new`: Create a new clip
+- `update`: Update an existing clip
 - `help`: Show help information
 
 ## Examples
 
+### Generate API Key
+
+First, generate an API key:
+
 ```bash
-# Create a new paste (using default address)
-clipclient --api-key your-api-key new "Hello from CLI"
+# Get API key from server
+xh GET http://localhost:8000/api/clip/key
+```
+
+### Create Clip
+
+```bash
+# Create a new clip with default address
+cargo run --bin clipclient -- --api-key <key> new "Hello from CLI"
+
+# Create a clip with title, password, and expiry
+cargo run --bin clipclient -- --api-key <key> new "Content here" \
+  --title "My Clip" \
+  --password "secret123" \
+  --expires "2024-12-31"
 
 # Create a paste on a remote server
-clipclient --api-key your-api-key https://zingat.example.com new "Remote paste"
+cargo run --bin clipclient -- --api-key <key> https://zingat.example.com new "Remote paste"
+```
 
-# Get a paste by ID
-clipclient --api-key your-api-key get <paste-id>
+### Get Clip
 
-# Update an existing paste
-clipclient --api-key your-api-key update <paste-id> "Updated content"
+```bash
+# Get a clip by shortcode
+cargo run --bin clipclient -- --api-key <key> get <shortcode>
 
-# Use environment variable for address
+# Get clip from remote server
+cargo run --bin clipclient -- --api-key <key> https://zingat.example.com get <shortcode>
+```
+
+### Update Clip
+
+```bash
+# Update an existing clip
+cargo run --bin clipclient -- --api-key <key> update <shortcode> "Updated content"
+
+# Update with all options
+cargo run --bin clipclient -- --api-key <key> update <shortcode> "New content" \
+  --title "Updated Title" \
+  --password "newpass" \
+  --expires "2025-01-01"
+```
+
+### Using Environment Variable
+
+```bash
+# Set server address via environment variable
 export ZINGAT_ADDR=https://zingat.example.com
-clipclient --api-key your-api-key new "Content"
+cargo run --bin clipclient -- --api-key <key> new "Content"
 ```

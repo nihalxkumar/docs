@@ -1,12 +1,12 @@
 ---
 title: "Zingat API Reference"
-description: "Complete API documentation for Zingat endpoints - Create, read, update, and manage pastes"
+description: "Complete API documentation for Zingat endpoints - Create, read, update, and manage clips"
 icon: "code"
 ---
 
 # Zingat API Reference
 
-Complete documentation for all Zingat API endpoints. All endpoints return JSON responses and support standard HTTP methods.
+Complete documentation for all Zingat API endpoints and web UI routes. API endpoints return JSON responses and support standard HTTP methods.
 
 ## Base URL
 
@@ -18,137 +18,157 @@ http://localhost:8000/api
 
 ## Authentication
 
-Most endpoints do not require authentication. Password-protected pastes require the password to be provided in the request.
+API endpoints require an API key for authentication. Generate an API key using `GET /api/clip/key`. Password-protected clips require the password to be provided when accessing via web UI.
 
-## Endpoints
+## Web UI Routes
 
-### Create Paste
+### Home Page
 
-Create a new paste with optional password protection and expiry.
+**Endpoint**: `GET /`
 
-**Endpoint**: `POST /api/paste`
+Displays the home page with clip creation form.
+
+### Create Clip (Web Form)
+
+**Endpoint**: `POST /`
+
+Creates a new clip from web form submission.
+
+### View Clip
+
+**Endpoint**: `GET /clip/<shortcode>`
+
+View a clip by its shortcode. If password-protected, displays password prompt.
+
+### Submit Password
+
+**Endpoint**: `POST /clip/<shortcode>`
+
+Submit password for password-protected clip.
+
+### Raw Content
+
+**Endpoint**: `GET /clip/raw/<shortcode>`
+
+Get raw content only (no HTML wrapper).
+
+## API Endpoints
+
+### Generate API Key
+
+Generate a new API key for programmatic access.
+
+**Endpoint**: `GET /api/clip/key`
+
+<ResponseExample>
+```json Success
+{
+  "api_key": "generated-api-key-here"
+}
+```
+</ResponseExample>
+
+### Create Clip
+
+Create a new clip with optional password protection and expiry.
+
+**Endpoint**: `POST /api/clip`
 
 {/* Structured param/response docs with Mintlify components */}
 <ParamField body="content" type="string" required>
 The text content to store.
 </ParamField>
+<ParamField body="title" type="string">
+Optional title for the clip.
+</ParamField>
 <ParamField body="password" type="string">
 Optional password for access protection.
 </ParamField>
-<ParamField body="expires_in" type="number" default="86400">
-Expiry time in seconds (default 24 hours).
+<ParamField body="expires" type="string">
+Optional expiration date in YYYY-MM-DD format.
 </ParamField>
 
 <RequestExample>
 ```bash xh
 # Per project rule, prefer xh over curl
-xh POST http://localhost:8000/api/paste \
-  content='Your paste content here' \
+xh POST http://localhost:8000/api/clip \
+  Content-Type:application/json \
+  X-API-Key:your-api-key \
+  content='Your clip content here' \
+  title='Optional Title' \
   password='optional_password' \
-  expires_in:=3600
+  expires='2024-12-31'
 ```
 </RequestExample>
 
 <ResponseExample>
 ```json Success
 {
-  "id": "abc123def456",
-  "url": "http://localhost:8000/paste/abc123def456",
-  "expires_at": "2025-11-05T12:00:00Z"
+  "shortcode": "abc123",
+  "url": "http://localhost:8000/clip/abc123",
+  "expires": "2024-12-31T00:00:00Z"
 }
 ```
 </ResponseExample>
 
-### Get Paste
+### Get Clip
 
-Retrieve a paste by its ID. Password required if paste is protected.
+Retrieve a clip by its shortcode. Requires API key.
 
-**Endpoint**: `GET /api/paste/{id}`
+**Endpoint**: `GET /api/clip/<shortcode>`
 
-**Headers** (if password protected):
+**Headers**:
 
 ```
-X-Password: your_password
+X-API-Key: your-api-key
 ```
 
 **Response**:
 
 ```json
 {
-  "id": "abc123def456",
-  "content": "Your paste content here",
-  "created_at": "2025-11-05T10:00:00Z",
-  "expires_at": "2025-11-05T12:00:00Z",
-  "views": 42,
-  "protected": true
+  "clip_id": "uuid-here",
+  "shortcode": "abc123",
+  "content": "Your clip content here",
+  "title": "Optional Title",
+  "posted": "2025-11-05T10:00:00Z",
+  "expires": "2024-12-31T00:00:00Z",
+  "hits": 42,
+  "password": null
 }
 ```
 
-### Delete Paste
+### Update Clip
 
-Delete a paste by its ID. Requires password if paste is protected.
+Update an existing clip. Requires API key.
 
-**Endpoint**: `DELETE /api/paste/{id}`
+**Endpoint**: `PUT /api/clip`
 
-**Headers** (if password protected):
+**Headers**:
 
 ```
-X-Password: your_password
+X-API-Key: your-api-key
+Content-Type: application/json
 ```
 
-**Response**:
+**Request Body**:
 
 ```json
 {
-  "success": true,
-  "message": "Paste deleted successfully"
+  "shortcode": "abc123",
+  "content": "Updated content",
+  "title": "Updated Title",
+  "password": "new_password",
+  "expires": "2024-12-31"
 }
 ```
 
-### Get Paste Stats
-
-Get statistics about a paste without retrieving the content.
-
-**Endpoint**: `GET /api/paste/{id}/stats`
-
 **Response**:
 
 ```json
 {
-  "id": "abc123def456",
-  "created_at": "2025-11-05T10:00:00Z",
-  "expires_at": "2025-11-05T12:00:00Z",
-  "views": 42,
-  "protected": true
-}
-```
-
-### List Recent Pastes
-
-Get a list of recently created pastes (non-protected only).
-
-**Endpoint**: `GET /api/pastes/recent`
-
-**Query Parameters**:
-- `limit` (number, optional): Number of pastes to return (default: 20, max: 100)
-- `offset` (number, optional): Pagination offset (default: 0)
-
-**Response**:
-
-```json
-{
-  "pastes": [
-    {
-      "id": "abc123def456",
-      "created_at": "2025-11-05T10:00:00Z",
-      "expires_at": "2025-11-05T12:00:00Z",
-      "views": 42,
-      "protected": false
-    }
-  ],
-  "total": 150,
-  "limit": 20,
-  "offset": 0
+  "shortcode": "abc123",
+  "url": "http://localhost:8000/clip/abc123"
 }
 ```
 
@@ -169,8 +189,8 @@ All endpoints return standard HTTP status codes with JSON error messages:
 
 ```json
 {
-  "error": "Password required",
-  "message": "This paste is password protected"
+  "error": "API key required",
+  "message": "This endpoint requires API key authentication"
 }
 ```
 
@@ -187,8 +207,8 @@ All endpoints return standard HTTP status codes with JSON error messages:
 
 ```json
 {
-  "error": "Paste not found",
-  "message": "The requested paste does not exist or has expired"
+  "error": "Clip not found",
+  "message": "The requested clip does not exist or has expired"
 }
 ```
 
@@ -203,49 +223,66 @@ All endpoints return standard HTTP status codes with JSON error messages:
 
 ## Rate Limiting
 
-API endpoints are rate limited to prevent abuse:
-
-- **Create Paste**: 10 requests per minute per IP
-- **Get Paste**: 60 requests per minute per IP
-- **Other endpoints**: 30 requests per minute per IP
+API endpoints may be rate limited to prevent abuse. Web UI routes use cookie-based password persistence for protected clips.
 
 ## Content Limits
 
-- **Maximum paste size**: 10MB (configurable)
 - **Minimum content length**: 1 character
-- **Maximum expiry**: 30 days (2592000 seconds)
+- **Expiry dates**: Custom date format (YYYY-MM-DD)
 
 ## Example Usage
 
 {/* Multi-client examples using CodeGroup */}
 <CodeGroup>
 ```bash xh
-# Create a paste (preferred tooling)
-xh POST http://localhost:8000/api/paste \
-  content='Hello, this is a test paste!' \
+# Generate API key first
+API_KEY=$(xh GET http://localhost:8000/api/clip/key | jq -r '.api_key')
+
+# Create a clip (preferred tooling)
+xh POST http://localhost:8000/api/clip \
+  Content-Type:application/json \
+  X-API-Key:$API_KEY \
+  content='Hello, this is a test clip!' \
+  title='Test Clip' \
   password='secret123' \
-  expires_in:=3600
+  expires='2024-12-31'
 ```
 
 ```javascript Node.js
-await fetch('http://localhost:8000/api/paste', {
+// Generate API key
+const keyResponse = await fetch('http://localhost:8000/api/clip/key');
+const { api_key } = await keyResponse.json();
+
+// Create clip
+await fetch('http://localhost:8000/api/clip', {
   method: 'POST',
-  headers: { 'Content-Type': 'application/json' },
+  headers: {
+    'Content-Type': 'application/json',
+    'X-API-Key': api_key
+  },
   body: JSON.stringify({
-    content: 'Hello, this is a test paste!',
+    content: 'Hello, this is a test clip!',
+    title: 'Test Clip',
     password: 'secret123',
-    expires_in: 3600
+    expires: '2024-12-31'
   })
 });
 ```
 
 ```python Python
 import requests
-requests.post('http://localhost:8000/api/paste', json={
-  'content': 'Hello, this is a test paste!',
+
+# Generate API key
+key_response = requests.get('http://localhost:8000/api/clip/key')
+api_key = key_response.json()['api_key']
+
+# Create clip
+requests.post('http://localhost:8000/api/clip', json={
+  'content': 'Hello, this is a test clip!',
+  'title': 'Test Clip',
   'password': 'secret123',
-  'expires_in': 3600
-})
+  'expires': '2024-12-31'
+}, headers={'X-API-Key': api_key})
 ```
 </CodeGroup>
 
@@ -255,9 +292,9 @@ requests.post('http://localhost:8000/api/paste', json={
 |------|-------------|
 | 200 | Success |
 | 201 | Created successfully |
-| 400 | Bad request parameters |
-| 401 | Password required |
+| 400 | Bad request parameters / API key error |
+| 401 | API key required or invalid |
 | 403 | Invalid password |
-| 404 | Paste not found |
+| 404 | Clip not found or expired |
 | 429 | Rate limit exceeded |
 | 500 | Internal server error |
