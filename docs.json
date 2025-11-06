@@ -42,6 +42,31 @@
             ]
           }
         ]
+      },
+      {
+        "tab": "Zingat",
+        "groups": [
+          {
+            "group": "Getting started",
+            "icon": "rocket",
+            "pages": [
+              "zingat/index",
+              "zingat/install",
+              "zingat/cli"
+            ]
+          },
+          {
+            "group": "Advanced",
+            "icon": "code",
+            "pages": [
+              "zingat/databases",
+              "zingat/development",
+              "zingat/architecture",
+              "zingat/api-reference",
+              "zingat/deployment"
+            ]
+          }
+        ]
       }
     ]
   },
