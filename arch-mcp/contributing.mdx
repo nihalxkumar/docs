@@ -116,8 +116,10 @@ Help improve the Arch MCP Server! We welcome contributions of all kinds.
   
   <Step title="Test Your Changes">
     Run the full testing checklist:
-    
-    - [ ] `uv run python test_server.py` - all tests pass
+
+    - [ ] `uv run pytest` - all unit tests pass
+    - [ ] `uv run pytest --cov` - coverage maintained or improved
+    - [ ] Add tests for new functionality
     - [ ] Test with MCP Inspector - tools work correctly
     - [ ] Test on Arch Linux (if available)
     - [ ] Test on non-Arch system

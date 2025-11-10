@@ -252,15 +252,60 @@ for pkg in packages:
 
 ## Testing Standards
 
-Write tests for new features:
+All new features and bug fixes **must include tests** using pytest:
+
+### Writing Tests
 
 ```python
-async def test_wiki_search():
-    """Test wiki search functionality."""
+import pytest
+from arch_ops_server.wiki import search_wiki
+
+@pytest.mark.asyncio
+async def test_wiki_search_success():
+    """Test wiki search returns results."""
     results = await search_wiki("systemd")
-    assert len(results) > 0
-    assert any("systemd" in r.lower() for r in results)
-    print("✓ PASS: Wiki Search")
+
+    assert results["count"] > 0
+    assert len(results["results"]) > 0
+    assert any("systemd" in r["title"].lower() for r in results["results"])
+
+@pytest.mark.asyncio
+async def test_wiki_search_no_results():
+    """Test wiki search handles no results."""
+    results = await search_wiki("nonexistent-xyz-package")
+
+    assert results["count"] == 0
+    assert results["results"] == []
+```
+
+### Test Organization
+
+- Place tests in `tests/` directory
+- Name test files `test_<module>.py`
+- Use descriptive test names: `test_<function>_<scenario>()`
+- Group related tests in classes: `class TestWikiSearch:`
+
+### Coverage Expectations
+
+- **New code**: Aim for 90%+ coverage
+- **Bug fixes**: Add regression tests
+- **Core modules**: Maintain 90%+ coverage (utils, wiki, pacman)
+- **Security code**: 100% coverage required (AUR analysis)
+
+### Running Tests
+
+```bash
+# Run all tests
+uv run pytest
+
+# Run with coverage
+uv run pytest --cov=arch_ops_server --cov-report=term-missing
+
+# Run specific test file
+uv run pytest tests/test_wiki.py -v
+
+# Run specific test
+uv run pytest tests/test_wiki.py::test_wiki_search_success -v
 ```
 
 ## Next Steps

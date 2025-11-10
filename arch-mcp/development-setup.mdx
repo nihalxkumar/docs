@@ -53,21 +53,33 @@ This installs all dependencies including development tools.
 
 ### Run Test Suite
 
-Verify all functionality is working:
+The project uses **pytest** for comprehensive automated testing:
 
 ```bash
-uv run python test_server.py
+# Run all tests
+uv run pytest
+
+# Run with verbose output
+uv run pytest -v
+
+# Run with coverage report
+uv run pytest --cov=arch_ops_server --cov-report=term-missing
+
+# Run specific test file
+uv run pytest tests/test_utils.py -v
 ```
 
-**Expected output:**
-```
-✓ PASS: Wiki Search
-✓ PASS: AUR Search
-✓ PASS: Official Package Info
-✓ PASS: PKGBUILD Fetch
+**Current test coverage:**
+- **92 tests** covering core functionality
+- **59% overall coverage** (90-98% on core modules)
+- Tests for utils, wiki, AUR, and pacman modules
+- Async test support via pytest-asyncio
 
-Total: 4/4 tests passed
-```
+**Test modules:**
+- `test_utils.py` - Platform detection, command execution (97% coverage)
+- `test_wiki.py` - Search, page retrieval, API/scraping (98% coverage)
+- `test_pacman.py` - Package info, updates, parsing (90% coverage)
+- `test_aur.py` - Security analysis, metadata risk scoring (52% coverage)
 
 ### Test with MCP Inspector
 
@@ -91,12 +103,14 @@ Use MCP Inspector during development to quickly test changes without restarting 
 
 Before submitting code, verify:
 
-- [ ] **Test suite passes** - `uv run python test_server.py`
+- [ ] **Unit tests pass** - `uv run pytest` (all tests green)
+- [ ] **Coverage maintained** - `uv run pytest --cov` (no significant drops)
+- [ ] **New features tested** - Add tests for any new functionality
 - [ ] **MCP Inspector works** - All tools return expected results
 - [ ] **Arch Linux testing** - Test on Arch if available
 - [ ] **Non-Arch testing** - Verify remote API fallbacks work
 - [ ] **Error logs clean** - No unexpected errors in `stderr`
-- [ ] **Error handling** - Test failure scenarios
+- [ ] **Error handling** - Test failure scenarios with pytest
 - [ ] **Documentation updated** - User-facing docs reflect changes
 
 ## Recommended extensions:
