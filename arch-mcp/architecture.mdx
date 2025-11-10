@@ -42,11 +42,22 @@ This server embodies Arch Linux principles:
 ┌───────────────────────▼─────────────────────────────────┐
 │              Module Layer (src/arch_ops_server/)         │
 │  ┌──────────┐  ┌──────────┐  ┌──────────┐  ┌──────────┐│
-│  │ wiki.py  │  │  aur.py  │  │pacman.py │  │ utils.py ││
+│  │ wiki.py  │  │  aur.py  │  │pacman.py │  │ system.py││
 │  │          │  │          │  │          │  │          ││
-│  │MediaWiki │  │ AUR RPC  │  │ Hybrid   │  │Platform  ││
-│  │API + BS4 │  │   v5     │  │Local/API │  │Detection ││
+│  │MediaWiki │  │ AUR RPC  │  │ Hybrid   │  │Monitoring││
+│  │API + BS4 │  │   v5     │  │Local/API │  │& Diag.   ││
 │  └──────────┘  └──────────┘  └──────────┘  └──────────┘│
+│  ┌──────────┐  ┌──────────┐  ┌──────────┐  ┌──────────┐│
+│  │ news.py  │  │ logs.py  │  │mirrors.py│  │ config.py││
+│  │          │  │          │  │          │  │          ││
+│  │RSS Feed  │  │Transaction│  │ Mirror   │  │  Config  ││
+│  │ Parser   │  │  History │  │ Manager  │  │  Parser  ││
+│  └──────────┘  └──────────┘  └──────────┘  └──────────┘│
+│  ┌──────────┐                                            │
+│  │ utils.py │                                            │
+│  │Platform  │                                            │
+│  │Detection │                                            │
+│  └──────────┘                                            │
 └───────────────────────┬─────────────────────────────────┘
                         │ Network/System Calls
 ┌───────────────────────▼─────────────────────────────────┐
@@ -60,7 +71,15 @@ This server embodies Arch Linux principles:
 
 ## Module Breakdown
 
-### Main Entry Point (`arch_ops_server.py`)
+### Main Entry Point (`__init__.py` and `server.py`)
+
+**`__init__.py` Responsibilities:**
+- Package initialization
+- Function exports
+- Async main() entry point
+- STDIO transport setup
+
+**`server.py` Responsibilities:**
 
 **Responsibilities:**
 - MCP protocol implementation
@@ -154,7 +173,7 @@ analyze_pkgbuild_safety(content: str) -> dict
 
 ### Official Repository Interface (`pacman.py`)
 
-Hybrid local/remote access to official packages:
+Hybrid local/remote access to official packages and comprehensive package management:
 
 ```python
 get_official_package_info(package: str) -> dict
@@ -170,11 +189,117 @@ check_updates_dry_run() -> str
   ├─> Check checkupdates command exists
   └─> run_command(["checkupdates"])
       └─> _parse_checkupdates_output()
+
+# Package Lifecycle
+remove_package(), remove_packages_batch()
+list_orphan_packages(), remove_orphans()
+mark_as_explicit(), mark_as_dependency()
+
+# Package Discovery
+find_package_owner(), list_package_files()
+search_package_files(), verify_package_integrity()
+
+# Package Groups
+list_package_groups(), list_group_packages()
+list_explicit_packages()
+
+# Database Management
+check_database_freshness()
 ```
 
 **Hybrid Approach:**
 - **On Arch**: Fast local queries, offline-capable
 - **Remote**: API-based, works anywhere
+
+### System Monitoring (`system.py`)
+
+System health and diagnostics:
+
+```python
+get_system_info() -> dict
+  └─> Platform info, kernel, memory, uptime
+
+check_disk_space() -> dict
+  └─> Disk usage for /, /home, /var with warnings
+
+get_pacman_cache_stats() -> dict
+  └─> Cache size, package count, age analysis
+
+check_failed_services() -> list
+  └─> systemctl --failed
+
+get_boot_logs(lines: int) -> str
+  └─> journalctl -b
+```
+
+### News Integration (`news.py`)
+
+Arch Linux news feed parsing and analysis:
+
+```python
+get_latest_news(limit: int) -> list
+  └─> Parse RSS from archlinux.org/feeds/news/
+
+check_critical_news() -> list
+  └─> Filter news requiring manual intervention
+
+get_news_since_last_update() -> list
+  └─> Compare news timestamps with last pacman -Syu
+```
+
+### Transaction Logs (`logs.py`)
+
+Pacman transaction history analysis:
+
+```python
+get_transaction_history(days: int) -> list
+  └─> Parse /var/log/pacman.log
+
+find_when_installed(package: str) -> dict
+  └─> Search logs for installation date
+
+find_failed_transactions() -> list
+  └─> Extract failed operations from logs
+
+get_database_sync_history(days: int) -> list
+  └─> Track database refresh events
+```
+
+### Mirror Management (`mirrors.py`)
+
+Repository mirror testing and optimization:
+
+```python
+list_active_mirrors() -> list
+  └─> Parse /etc/pacman.d/mirrorlist
+
+test_mirror_speed(mirror_url: str) -> dict
+  └─> Latency and throughput testing
+
+suggest_fastest_mirrors(country: str) -> list
+  └─> Query mirror status API
+
+check_mirrorlist_health() -> dict
+  └─> Validate mirror configuration
+```
+
+### Configuration Parsing (`config.py`)
+
+System configuration analysis:
+
+```python
+analyze_pacman_conf() -> dict
+  └─> Parse /etc/pacman.conf
+
+analyze_makepkg_conf() -> dict
+  └─> Parse /etc/makepkg.conf
+
+check_ignored_packages() -> list
+  └─> List packages in IgnorePkg
+
+get_parallel_downloads_setting() -> int
+  └─> Extract ParallelDownloads value
+```
 
 ## Data Flow Examples
 
