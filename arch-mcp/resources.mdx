@@ -21,10 +21,20 @@ Direct access to Arch ecosystem data via custom URI schemes. Resources provide r
 | `pacman://explicit` | `pacman://explicit` | Explicitly installed packages (Arch only) |
 | `pacman://groups` | `pacman://groups` | All package groups (Arch only) |
 | `pacman://group/*` | `pacman://group/base-devel` | Packages in specific group (Arch only) |
+| `pacman://database/freshness` | `pacman://database/freshness` | Package database sync status (Arch only) |
+| `pacman://log/recent` | `pacman://log/recent` | Recent package transactions (Arch only) |
+| `pacman://log/failed` | `pacman://log/failed` | Failed package transactions (Arch only) |
 | `system://info` | `system://info` | System information (kernel, memory, uptime) |
 | `system://disk` | `system://disk` | Disk space usage statistics |
 | `system://services/failed` | `system://services/failed` | Failed systemd services |
 | `system://logs/boot` | `system://logs/boot` | Recent boot logs |
+| `archnews://latest` | `archnews://latest` | Latest Arch Linux news |
+| `archnews://critical` | `archnews://critical` | Critical news requiring manual intervention |
+| `archnews://since-update` | `archnews://since-update` | News since last system update (Arch only) |
+| `config://pacman` | `config://pacman` | Parsed pacman.conf configuration (Arch only) |
+| `config://makepkg` | `config://makepkg` | Parsed makepkg.conf configuration (Arch only) |
+| `mirrors://active` | `mirrors://active` | Currently configured mirrors (Arch only) |
+| `mirrors://health` | `mirrors://health` | Mirror configuration health status (Arch only) |
 
 ## How to Use Resources
 
@@ -280,6 +290,196 @@ system://logs/boot
 - Service startup information
 
 **Use Case:** Diagnose boot issues, startup problems, or service failures.
+
+### Package Database Freshness Resources
+
+**URI Scheme:** `pacman://database/freshness`
+
+Check when the package database was last synchronized (Arch Linux only).
+
+**Examples:**
+```
+pacman://database/freshness
+```
+
+**Returns:**
+- Last sync timestamp
+- Days since last sync
+- Recommendations if database is stale
+
+**Use Case:** Verify package database is up-to-date before installations or updates.
+
+### Recent Transaction Log Resources
+
+**URI Scheme:** `pacman://log/recent`
+
+View recent package transactions from pacman log (Arch Linux only).
+
+**Examples:**
+```
+pacman://log/recent
+```
+
+**Returns:**
+- Recent install/upgrade/remove operations
+- Timestamps
+- Package versions
+- Transaction details
+
+**Use Case:** Track recent system changes and package history.
+
+### Failed Transaction Log Resources
+
+**URI Scheme:** `pacman://log/failed`
+
+List failed package operations from pacman log (Arch Linux only).
+
+**Examples:**
+```
+pacman://log/failed
+```
+
+**Returns:**
+- Failed transactions
+- Error messages
+- Timestamps
+- Affected packages
+
+**Use Case:** Troubleshoot installation failures and dependency issues.
+
+### Latest News Resources
+
+**URI Scheme:** `archnews://latest`
+
+Fetch the latest Arch Linux news from the official feed.
+
+**Examples:**
+```
+archnews://latest
+```
+
+**Returns:**
+- Recent news articles
+- Publication dates
+- Article content
+- Links to full articles
+
+**Use Case:** Stay informed about important Arch Linux updates and announcements.
+
+### Critical News Resources
+
+**URI Scheme:** `archnews://critical`
+
+Filter news that requires manual intervention before system updates.
+
+**Examples:**
+```
+archnews://critical
+```
+
+**Returns:**
+- Critical announcements
+- Manual intervention requirements
+- Action items
+- Deadlines
+
+**Use Case:** Check for breaking changes before running system updates.
+
+### News Since Update Resources
+
+**URI Scheme:** `archnews://since-update`
+
+Get news posted since your last system update (Arch Linux only).
+
+**Examples:**
+```
+archnews://since-update
+```
+
+**Returns:**
+- Unread news articles
+- Last update timestamp
+- Important announcements you may have missed
+
+**Use Case:** Ensure you haven't missed critical news before updating.
+
+### Pacman Configuration Resources
+
+**URI Scheme:** `config://pacman`
+
+Parse and analyze pacman.conf configuration (Arch Linux only).
+
+**Examples:**
+```
+config://pacman
+```
+
+**Returns:**
+- Enabled repositories
+- Configuration options
+- Ignored packages
+- Parallel downloads setting
+- Architecture settings
+
+**Use Case:** Review system package manager configuration.
+
+### Makepkg Configuration Resources
+
+**URI Scheme:** `config://makepkg`
+
+Parse and analyze makepkg.conf configuration (Arch Linux only).
+
+**Examples:**
+```
+config://makepkg
+```
+
+**Returns:**
+- Build flags (CFLAGS, CXXFLAGS)
+- Architecture settings
+- Packager information
+- Compression settings
+- Build environment configuration
+
+**Use Case:** Review package building configuration for AUR packages.
+
+### Active Mirrors Resources
+
+**URI Scheme:** `mirrors://active`
+
+List currently configured repository mirrors (Arch Linux only).
+
+**Examples:**
+```
+mirrors://active
+```
+
+**Returns:**
+- Active mirror URLs
+- Mirror countries
+- Protocol (http/https)
+- Mirror configuration order
+
+**Use Case:** Verify mirror configuration and order.
+
+### Mirror Health Resources
+
+**URI Scheme:** `mirrors://health`
+
+Check mirror configuration health and status (Arch Linux only).
+
+**Examples:**
+```
+mirrors://health
+```
+
+**Returns:**
+- Mirror availability
+- Configuration issues
+- Health warnings
+- Recommendations
+
+**Use Case:** Diagnose mirror-related download issues.
 
 ## Resource Usage Patterns
 

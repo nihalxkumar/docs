@@ -717,6 +717,417 @@ Retrieve recent boot logs from journalctl.
 - Timestamps
 - Log levels
 
+### check_database_freshness
+
+Check when the package database was last synchronized.
+
+**Parameters:** None
+
+**Features:**
+- Parses `/var/lib/pacman/sync/*.db` timestamps
+- Compares against current time
+- Provides staleness warnings
+
+**Example:**
+```json
+{}
+```
+
+**Returns:**
+- Last sync timestamp
+- Days since last sync
+- Staleness warnings
+- Recommendations
+
+## Transaction History & Log Tools
+
+Tools for analyzing pacman transaction history and troubleshooting past operations.
+
+### get_transaction_history
+
+Retrieve recent package transactions from pacman log.
+
+**Parameters:**
+- `days` (integer, optional): Number of days to look back (default: 30)
+- `operation_type` (string, optional): Filter by type: "install", "upgrade", "remove", "all" (default: "all")
+
+**Features:**
+- Parses `/var/log/pacman.log`
+- Filters by operation type
+- Chronological ordering
+
+**Example:**
+```json
+{
+  "days": 7,
+  "operation_type": "upgrade"
+}
+```
+
+**Returns:**
+- List of transactions
+- Timestamps
+- Package names and versions
+- Operation types
+
+### find_when_installed
+
+Find when a specific package was installed.
+
+**Parameters:**
+- `package_name` (string): Name of the package
+
+**Features:**
+- Searches pacman log history
+- Finds initial installation date
+- Shows upgrade history
+
+**Example:**
+```json
+{
+  "package_name": "firefox"
+}
+```
+
+**Returns:**
+- Installation date
+- Installation method (explicit/dependency)
+- Version at installation
+- Upgrade history
+
+### find_failed_transactions
+
+List all failed package operations from log history.
+
+**Parameters:**
+- `days` (integer, optional): Number of days to look back (default: 30)
+
+**Features:**
+- Extracts error messages
+- Groups by failure type
+- Provides troubleshooting context
+
+**Example:**
+```json
+{
+  "days": 60
+}
+```
+
+**Returns:**
+- Failed operations list
+- Error messages
+- Timestamps
+- Affected packages
+
+### get_database_sync_history
+
+Track package database synchronization events.
+
+**Parameters:**
+- `days` (integer, optional): Number of days to look back (default: 30)
+
+**Features:**
+- Parses sync events from log
+- Shows sync frequency
+- Identifies sync issues
+
+**Example:**
+```json
+{
+  "days": 14
+}
+```
+
+**Returns:**
+- Sync event timestamps
+- Sync frequency analysis
+- Failed sync attempts
+
+## News & Safety Check Tools
+
+Tools for staying informed about Arch Linux updates and critical announcements.
+
+### get_latest_news
+
+Fetch latest Arch Linux news from official RSS feed.
+
+**Parameters:**
+- `limit` (integer, optional): Number of news items to retrieve (default: 10)
+
+**Features:**
+- Parses archlinux.org/feeds/news/
+- Rich text content extraction
+- Publication date sorting
+
+**Example:**
+```json
+{
+  "limit": 5
+}
+```
+
+**Returns:**
+- News article titles
+- Publication dates
+- Article content
+- Links to full articles
+
+### check_critical_news
+
+Filter news that requires manual intervention before updates.
+
+**Parameters:** None
+
+**Features:**
+- Keyword-based filtering
+- Identifies breaking changes
+- Highlights action items
+
+**Example:**
+```json
+{}
+```
+
+**Returns:**
+- Critical news articles
+- Required actions
+- Affected packages
+- Deadlines
+
+<Warning>
+Always check this before running system updates to avoid breaking changes.
+</Warning>
+
+### get_news_since_last_update
+
+Get news posted since your last system update.
+
+**Parameters:** None
+
+**Features:**
+- Compares news dates with last `pacman -Syu`
+- Highlights unread news
+- Works only on Arch Linux
+
+**Example:**
+```json
+{}
+```
+
+**Returns:**
+- Unread news articles
+- Last update timestamp
+- Number of unread items
+
+**Requirements:**
+- Arch Linux system
+- Access to `/var/log/pacman.log`
+
+## Mirror Management Tools
+
+Tools for optimizing and troubleshooting repository mirrors.
+
+### list_active_mirrors
+
+List currently configured repository mirrors.
+
+**Parameters:** None
+
+**Features:**
+- Parses `/etc/pacman.d/mirrorlist`
+- Shows enabled mirrors only
+- Displays mirror order
+
+**Example:**
+```json
+{}
+```
+
+**Returns:**
+- Active mirror URLs
+- Mirror countries
+- Protocol (http/https)
+- Configuration order
+
+### test_mirror_speed
+
+Test latency and throughput of a specific mirror.
+
+**Parameters:**
+- `mirror_url` (string): Full URL of the mirror to test
+
+**Features:**
+- Latency measurement
+- Download speed testing
+- Connection reliability check
+
+**Example:**
+```json
+{
+  "mirror_url": "https://mirror.example.com/archlinux/"
+}
+```
+
+**Returns:**
+- Average latency (ms)
+- Download speed (MB/s)
+- Connection status
+- Reliability score
+
+### suggest_fastest_mirrors
+
+Get recommended mirrors based on location and speed.
+
+**Parameters:**
+- `country` (string, optional): ISO country code (e.g., "US", "DE")
+- `protocol` (string, optional): "http" or "https" (default: "https")
+- `limit` (integer, optional): Number of mirrors to suggest (default: 5)
+
+**Features:**
+- Queries Arch mirror status API
+- Filters by country and protocol
+- Sorts by speed and sync status
+
+**Example:**
+```json
+{
+  "country": "US",
+  "protocol": "https",
+  "limit": 5
+}
+```
+
+**Returns:**
+- Recommended mirror URLs
+- Sync status
+- Last sync time
+- Speed estimates
+
+### check_mirrorlist_health
+
+Validate mirror configuration and identify issues.
+
+**Parameters:** None
+
+**Features:**
+- Checks mirrorlist file exists
+- Validates mirror URL formats
+- Identifies commented-out mirrors
+- Detects duplicate entries
+
+**Example:**
+```json
+{}
+```
+
+**Returns:**
+- Configuration health status
+- Issues found
+- Recommendations
+- Warning messages
+
+## Configuration Management Tools
+
+Tools for analyzing and managing system configuration files.
+
+### analyze_pacman_conf
+
+Parse and analyze pacman.conf configuration.
+
+**Parameters:** None
+
+**Features:**
+- Parses `/etc/pacman.conf`
+- Extracts all settings
+- Identifies custom repositories
+
+**Example:**
+```json
+{}
+```
+
+**Returns:**
+- Enabled repositories
+- Configuration options
+- Ignored packages
+- Hold packages
+- Architecture settings
+- Parallel downloads setting
+
+### analyze_makepkg_conf
+
+Parse and analyze makepkg.conf configuration.
+
+**Parameters:** None
+
+**Features:**
+- Parses `/etc/makepkg.conf`
+- Extracts build flags
+- Shows package signing settings
+
+**Example:**
+```json
+{}
+```
+
+**Returns:**
+- Build flags (CFLAGS, CXXFLAGS, MAKEFLAGS)
+- Architecture (CARCH)
+- Packager information
+- Compression settings
+- GPG key settings
+
+### check_ignored_packages
+
+List packages configured to be ignored during updates.
+
+**Parameters:** None
+
+**Features:**
+- Reads `IgnorePkg` from pacman.conf
+- Warns about critical packages
+- Shows ignore reasons if commented
+
+**Example:**
+```json
+{}
+```
+
+**Returns:**
+- List of ignored packages
+- Critical package warnings
+- Configuration location
+
+<Warning>
+Ignoring critical packages like `linux` or `systemd` can lead to system instability.
+</Warning>
+
+### get_parallel_downloads_setting
+
+Get the parallel downloads configuration from pacman.conf.
+
+**Parameters:** None
+
+**Features:**
+- Extracts `ParallelDownloads` value
+- Shows default if not configured
+- Provides optimization suggestions
+
+**Example:**
+```json
+{}
+```
+
+**Returns:**
+- Parallel downloads value
+- Whether it's enabled
+- Optimization recommendations
+
+<Tip>
+Setting `ParallelDownloads = 5` in pacman.conf can significantly speed up updates.
+</Tip>
+
 ## Tool Usage Examples
 
 ### Safe Installation Workflow
