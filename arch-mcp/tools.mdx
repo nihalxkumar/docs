@@ -253,6 +253,470 @@ Evaluate package trustworthiness based on metadata.
 - Old package = proven stability
 - High popularity = widely used
 
+## Package Removal Tools
+
+Tools for safely removing packages from the system (Arch Linux only).
+
+### remove_package
+
+Remove a single package with various removal strategies.
+
+**Parameters:**
+- `package_name` (string): Name of the package to remove
+- `remove_dependencies` (boolean, optional): Remove package and its dependencies (default: false)
+- `force` (boolean, optional): Force removal ignoring dependencies (default: false)
+
+**Features:**
+- Basic removal (`pacman -R`)
+- Removal with dependencies (`pacman -Rs`)
+- Forced removal (`pacman -Rdd`)
+- Shows disk space to be freed
+
+**Example:**
+```json
+{
+  "package_name": "firefox",
+  "remove_dependencies": true
+}
+```
+
+**Returns:**
+- Removal status
+- Packages removed
+- Space freed
+
+<Warning>
+Use `force: true` with extreme caution as it can break system dependencies.
+</Warning>
+
+### remove_packages_batch
+
+Remove multiple packages in a single transaction for efficiency.
+
+**Parameters:**
+- `package_names` (array): List of package names to remove
+- `remove_dependencies` (boolean, optional): Remove packages and their dependencies
+
+**Example:**
+```json
+{
+  "package_names": ["firefox", "thunderbird", "gimp"],
+  "remove_dependencies": false
+}
+```
+
+**Returns:**
+- Removal status for all packages
+- Total space freed
+
+## Orphan Management Tools
+
+Manage orphaned packages (dependencies no longer required by any installed package).
+
+### list_orphan_packages
+
+List all orphaned packages with disk space usage information.
+
+**Parameters:** None
+
+**Features:**
+- Uses `pacman -Qtdq`
+- Shows total disk space usage
+- Identifies candidates for removal
+
+**Example:**
+```json
+{}
+```
+
+**Returns:**
+- List of orphaned packages
+- Individual package sizes
+- Total space that can be freed
+
+### remove_orphans
+
+Remove all orphaned packages to reclaim disk space.
+
+**Parameters:**
+- `dry_run` (boolean, optional): Preview what would be removed without actually removing (default: true)
+- `exclude` (array, optional): List of package names to exclude from removal
+
+**Features:**
+- Safe dry-run mode by default
+- Package exclusion list
+- Shows space to be freed
+- Uses `pacman -Rns`
+
+**Example:**
+```json
+{
+  "dry_run": false,
+  "exclude": ["lib32-gcc-libs"]
+}
+```
+
+**Returns:**
+- List of packages to be/were removed
+- Space freed
+- Operation status
+
+## Package Ownership Tools
+
+Tools for finding package-file relationships and investigating file origins.
+
+### find_package_owner
+
+Find which package owns a specific file on the system.
+
+**Parameters:**
+- `file_path` (string): Absolute path to the file
+
+**Features:**
+- Uses `pacman -Qo`
+- Useful for troubleshooting
+- Quick file-to-package mapping
+
+**Example:**
+```json
+{
+  "file_path": "/usr/bin/vim"
+}
+```
+
+**Returns:**
+- Package name
+- Package version
+- File path confirmation
+
+### list_package_files
+
+List all files owned by a package with optional filtering.
+
+**Parameters:**
+- `package_name` (string): Name of the package
+- `filter_pattern` (string, optional): Regex pattern to filter files
+
+**Features:**
+- Uses `pacman -Ql`
+- Regex pattern support
+- Shows file types and locations
+
+**Example:**
+```json
+{
+  "package_name": "systemd",
+  "filter_pattern": ".*\\.service$"
+}
+```
+
+**Returns:**
+- Complete file listing
+- Filtered results if pattern provided
+
+### search_package_files
+
+Search for files across all packages in repositories.
+
+**Parameters:**
+- `filename_pattern` (string): File name or pattern to search for
+
+**Features:**
+- Uses `pacman -F`
+- Searches all repository packages
+- Requires package database sync (`pacman -Fy`)
+
+**Example:**
+```json
+{
+  "filename_pattern": "libssl.so"
+}
+```
+
+**Returns:**
+- List of packages containing the file
+- File paths within each package
+
+<Tip>
+Run `sudo pacman -Fy` periodically to keep the file database up-to-date.
+</Tip>
+
+## Package Verification Tools
+
+Verify integrity and authenticity of installed packages.
+
+### verify_package_integrity
+
+Check package files for modifications, corruption, or missing files.
+
+**Parameters:**
+- `package_name` (string): Name of the package to verify
+- `thorough` (boolean, optional): Perform thorough check including file attributes (default: false)
+
+**Features:**
+- Basic check: `pacman -Qk`
+- Thorough check: `pacman -Qkk`
+- Detects modified files
+- Finds missing files
+- Checks file permissions
+
+**Example:**
+```json
+{
+  "package_name": "systemd",
+  "thorough": true
+}
+```
+
+**Returns:**
+- List of modified files
+- List of missing files
+- Verification status
+- Issue severity levels
+
+## Package Group Tools
+
+Manage and query package groups (collections of related packages).
+
+### list_package_groups
+
+List all available package groups.
+
+**Parameters:** None
+
+**Features:**
+- Uses `pacman -Sg`
+- Shows all groups in repositories
+
+**Example:**
+```json
+{}
+```
+
+**Returns:**
+- List of all package groups
+- Group descriptions
+
+### list_group_packages
+
+List all packages in a specific group.
+
+**Parameters:**
+- `group_name` (string): Name of the package group (e.g., 'base-devel', 'gnome')
+
+**Features:**
+- Shows all group members
+- Indicates installed status
+- Uses `pacman -Sg` and `pacman -Qg`
+
+**Example:**
+```json
+{
+  "group_name": "base-devel"
+}
+```
+
+**Returns:**
+- List of packages in the group
+- Installation status for each
+- Total package count
+
+## Install Reason Management Tools
+
+Manage the install reason flag (explicit vs dependency) for packages.
+
+### list_explicit_packages
+
+List all packages explicitly installed by the user.
+
+**Parameters:** None
+
+**Features:**
+- Uses `pacman -Qe`
+- Useful for backup/restore workflows
+- Shows user-installed packages only
+
+**Example:**
+```json
+{}
+```
+
+**Returns:**
+- List of explicitly installed packages
+- Package versions
+- Total count
+
+<Tip>
+Save this list to recreate your system setup on a new installation.
+</Tip>
+
+### mark_as_explicit
+
+Mark a package as explicitly installed.
+
+**Parameters:**
+- `package_name` (string): Name of the package to mark
+
+**Features:**
+- Uses `pacman -D --asexplicit`
+- Prevents package from being removed as orphan
+- Useful for keeping dependencies you want
+
+**Example:**
+```json
+{
+  "package_name": "python-requests"
+}
+```
+
+**Returns:**
+- Operation status
+- Updated install reason
+
+### mark_as_dependency
+
+Mark a package as a dependency.
+
+**Parameters:**
+- `package_name` (string): Name of the package to mark
+
+**Features:**
+- Uses `pacman -D --asdeps`
+- Allows package to be removed as orphan if not required
+- Useful for cleaning up explicitly installed dependencies
+
+**Example:**
+```json
+{
+  "package_name": "lib32-mesa"
+}
+```
+
+**Returns:**
+- Operation status
+- Updated install reason
+
+## System Diagnostic Tools
+
+Tools for system health monitoring and troubleshooting.
+
+### get_system_info
+
+Get comprehensive system information.
+
+**Parameters:** None
+
+**Features:**
+- Kernel version
+- System architecture
+- Hostname
+- Uptime
+- Memory statistics (total/available/used)
+- Works on any Linux system
+
+**Example:**
+```json
+{}
+```
+
+**Returns:**
+- Kernel version
+- Architecture (x86_64, aarch64, etc.)
+- Hostname
+- Uptime
+- Memory stats
+
+### check_disk_space
+
+Check disk space usage for critical filesystem paths.
+
+**Parameters:** None
+
+**Features:**
+- Checks: `/`, `/home`, `/var`, `/var/cache/pacman/pkg`
+- Warns when space is low (< 10% free)
+- Works on any Linux system
+
+**Example:**
+```json
+{}
+```
+
+**Returns:**
+- Usage statistics per path
+- Low space warnings
+- Available space
+
+### get_pacman_cache_stats
+
+Analyze pacman package cache statistics.
+
+**Parameters:** None
+
+**Features:**
+- Cache size analysis
+- Package count in cache
+- Oldest and newest packages
+- Analyzes `/var/cache/pacman/pkg/`
+
+**Example:**
+```json
+{}
+```
+
+**Returns:**
+- Total cache size
+- Number of cached packages
+- Cache age range
+- Cleanup recommendations
+
+### check_failed_services
+
+Check for failed systemd services.
+
+**Parameters:** None
+
+**Features:**
+- Uses `systemctl --failed`
+- Lists all failed services
+- Shows brief error information
+- Works on systemd-based systems
+
+**Example:**
+```json
+{}
+```
+
+**Returns:**
+- List of failed services
+- Service status
+- Error summaries
+
+### get_boot_logs
+
+Retrieve recent boot logs from journalctl.
+
+**Parameters:**
+- `lines` (integer, optional): Number of log lines to retrieve (default: 100)
+
+**Features:**
+- Uses `journalctl -b`
+- Retrieves current boot logs
+- Configurable line count
+- Works on systemd-based systems
+
+**Example:**
+```json
+{
+  "lines": 200
+}
+```
+
+**Returns:**
+- Boot log entries
+- Timestamps
+- Log levels
+
 ## Tool Usage Examples
 
 ### Safe Installation Workflow

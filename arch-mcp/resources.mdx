@@ -17,6 +17,14 @@ Direct access to Arch ecosystem data via custom URI schemes. Resources provide r
 | `aur://*/info` | `aur://yay/info` | AUR package metadata (votes, maintainer, dates) |
 | `archrepo://` | `archrepo://vim` | Official repository package details |
 | `pacman://installed` | `pacman://installed` | System installed packages list (Arch only) |
+| `pacman://orphans` | `pacman://orphans` | Orphaned packages list (Arch only) |
+| `pacman://explicit` | `pacman://explicit` | Explicitly installed packages (Arch only) |
+| `pacman://groups` | `pacman://groups` | All package groups (Arch only) |
+| `pacman://group/*` | `pacman://group/base-devel` | Packages in specific group (Arch only) |
+| `system://info` | `system://info` | System information (kernel, memory, uptime) |
+| `system://disk` | `system://disk` | Disk space usage statistics |
+| `system://services/failed` | `system://services/failed` | Failed systemd services |
+| `system://logs/boot` | `system://logs/boot` | Recent boot logs |
 
 ## How to Use Resources
 
@@ -120,6 +128,158 @@ pacman://installed
 - Package sizes
 
 **Note:** This resource only works on Arch Linux systems with pacman installed.
+
+### Orphan Packages Resources
+
+**URI Scheme:** `pacman://orphans`
+
+List all orphaned packages (dependencies no longer required by any installed package) on the system (Arch Linux only).
+
+**Examples:**
+```
+pacman://orphans
+```
+
+**Returns:**
+- List of orphaned packages
+- Package sizes
+- Total space that can be freed
+- Installation dates
+
+**Use Case:** Identify packages that can be safely removed to free up disk space.
+
+### Explicit Packages Resources
+
+**URI Scheme:** `pacman://explicit`
+
+List all packages explicitly installed by the user (not installed as dependencies) on the system (Arch Linux only).
+
+**Examples:**
+```
+pacman://explicit
+```
+
+**Returns:**
+- List of user-installed packages
+- Version numbers
+- Install dates
+- Total package count
+
+**Use Case:** Create backup lists for system migration or understand which packages you personally installed.
+
+### Package Groups Resources
+
+**URI Scheme:** `pacman://groups`
+
+List all available package groups in the repositories (Arch Linux only).
+
+**Examples:**
+```
+pacman://groups
+```
+
+**Returns:**
+- List of all package groups
+- Group names
+- Number of packages per group
+
+**Use Case:** Discover package collections like `base-devel`, `gnome`, `kde-applications`.
+
+### Specific Group Packages Resources
+
+**URI Scheme:** `pacman://group/GROUP_NAME`
+
+List all packages in a specific package group (Arch Linux only).
+
+**Examples:**
+```
+pacman://group/base-devel
+pacman://group/gnome
+pacman://group/xorg
+```
+
+**Returns:**
+- List of packages in the group
+- Installation status for each package
+- Package versions
+- Total package count
+
+**Use Case:** Review what packages are included before installing a group.
+
+### System Information Resources
+
+**URI Scheme:** `system://info`
+
+Get comprehensive system information.
+
+**Examples:**
+```
+system://info
+```
+
+**Returns:**
+- Kernel version and release
+- System architecture (x86_64, aarch64, etc.)
+- Hostname
+- System uptime
+- Memory statistics (total, available, used)
+
+**Use Case:** Quick system diagnostics and troubleshooting context.
+
+### Disk Space Resources
+
+**URI Scheme:** `system://disk`
+
+Check disk space usage for critical filesystem paths.
+
+**Examples:**
+```
+system://disk
+```
+
+**Returns:**
+- Usage statistics for: `/`, `/home`, `/var`, `/var/cache/pacman/pkg`
+- Available space
+- Low space warnings (< 10% free)
+
+**Use Case:** Monitor disk usage before installations or identify space issues.
+
+### Failed Services Resources
+
+**URI Scheme:** `system://services/failed`
+
+List all failed systemd services (systemd-based systems).
+
+**Examples:**
+```
+system://services/failed
+```
+
+**Returns:**
+- List of failed service units
+- Service status
+- Brief error summaries
+
+**Use Case:** System health checks and troubleshooting service failures.
+
+### Boot Logs Resources
+
+**URI Scheme:** `system://logs/boot`
+
+Retrieve recent boot logs from the current boot session (systemd-based systems).
+
+**Examples:**
+```
+system://logs/boot
+```
+
+**Returns:**
+- Boot log entries
+- Timestamps
+- Log levels (info, warning, error)
+- Service startup information
+
+**Use Case:** Diagnose boot issues, startup problems, or service failures.
 
 ## Resource Usage Patterns
 
