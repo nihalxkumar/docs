@@ -4,30 +4,81 @@ description: "Technical deep dive into system design, following the Arch Way pri
 icon: "sitemap"
 ---
 
-# Architecture
-
 Technical overview of the Arch MCP Server implementation following the Arch Way principles.
 
 ## Design Philosophy
 
-This server embodies Arch Linux principles:
+This server embodies the **Arch Way** principles in its implementation.
 
-1. **Minimalism** - No unnecessary abstractions, clean code
-2. **Correctness** - Robust error handling, type hints, comprehensive logging
-3. **Transparency** - Well-documented, readable source code
-4. **User-centricity** - Assumes competent users, provides information over hand-holding
-5. **Pragmatism** - Hybrid approach adapts to runtime environment
+<CardGroup cols={2}>
+  <Card title="Minimalism" icon="feather">
+    No unnecessary abstractions or bloat. Every function serves a clear purpose with clean, readable code.
+    
+    <Tip>
+    The entire codebase is under 3,000 lines - easy to audit and understand.
+    </Tip>
+  </Card>
+  
+  <Card title="Correctness" icon="check-circle">
+    Comprehensive error handling at every layer, full type hints, and extensive logging for debugging.
+    
+    ```python
+    async def get_wiki_page(title: str) -> str:
+        """Type hints ensure correctness"""
+        try:
+            # Proper error handling
+            return await _fetch_via_api(title)
+        except HTTPError as e:
+            logger.error(f"Failed: {e}")
+            raise
+    ```
+  </Card>
+  
+  <Card title="Transparency" icon="eye">
+    Every module is well-documented with clear function signatures, docstrings, and inline comments.
+    
+    <Info>
+    No magic - you can read the source and understand exactly what's happening.
+    </Info>
+  </Card>
+  
+  <Card title="User-Centricity" icon="user">
+    Assumes competent users. Provides detailed information and warnings, but doesn't prevent advanced usage.
+    
+    <Note>
+    AUR warnings inform users of risks but don't block access - you decide.
+    </Note>
+  </Card>
+  
+  <Card title="Pragmatism" icon="wrench">
+    Hybrid local/remote approach: uses fast local queries on Arch, falls back to remote APIs elsewhere.
+    
+    ```python
+    if IS_ARCH and has_pacman():
+        return await _local_query()
+    else:
+        return await _remote_api()
+    ```
+  </Card>
+  
+  <Card title="Simplicity" icon="code">
+    Standard library and minimal dependencies. No complex frameworks or heavy abstractions.
+    
+    **Dependencies:** httpx, beautifulsoup4, markdownify, mcp
+  </Card>
+</CardGroup>
 
 ## System Architecture
 
 ```
 ┌─────────────────────────────────────────────────────────┐
-│                    MCP Client (e.g., Claude Desktop)     │
+│         MCP Client (Claude, Cursor etc.)      │
 └───────────────────────┬─────────────────────────────────┘
-                        │ STDIO Transport
-                        │ (JSON-RPC over stdin/stdout)
+                        │ Transport Layer
+                        │ • STDIO (stdin/stdout)
+                        │ • HTTP/SSE (Server-Sent Events)
 ┌───────────────────────▼─────────────────────────────────┐
-│                   arch_ops_server.py                     │
+│           arch_ops_server.py / http_server.py            │
 │                   (MCP Server Core)                      │
 │  ┌─────────────────────────────────────────────────┐   │
 │  │ Resources            Tools                Prompts│   │
@@ -94,23 +145,209 @@ This server embodies Arch Linux principles:
 - JSON serialization of responses
 - Error propagation from modules
 
+### HTTP Server Module (`http_server.py`)
+
+**New in v3.1.0:** HTTP/SSE transport support for containerized deployments.
+
+**Purpose:**
+- Alternative transport to STDIO for web-based clients
+- Server-Sent Events (SSE) for real-time communication
+- Containerized deployment support (Docker, Smithery)
+- Health check endpoint for monitoring
+
+**Entry Points:**
+- `arch-ops-server` - STDIO transport (default)
+- `arch-ops-server-http` - HTTP/SSE transport
+
+**Configuration:**
+```bash
+# Install with HTTP extras
+uv pip install "arch-ops-server[http]"
+
+# Run HTTP server
+arch-ops-server-http
+
+# Custom port
+PORT=8000 arch-ops-server-http
+```
+
+**Dependencies:**
+- `starlette` - ASGI framework for HTTP routing
+- `uvicorn` - ASGI server for production
+- `mcp.server.sse` - SSE transport implementation
+
+### Tool Metadata System (`tool_metadata.py`)
+
+**New in v3.1.0:** Structured tool organization and relationships.
+
+**Purpose:**
+- Categorizes all 41 tools into 9 logical groups
+- Defines tool relationships and workflows
+- Provides discoverability metadata
+- Enables intelligent tool suggestions
+
+**Categories:**
+```python
+CATEGORIES = {
+    "discovery": "🔍 Discovery & Information",
+    "lifecycle": "📦 Package Lifecycle",
+    "maintenance": "🔧 Package Maintenance",
+    "organization": "📁 File Organization",
+    "security": "🔒 Security Analysis",
+    "monitoring": "📊 System Monitoring",
+    "history": "📜 Transaction History",
+    "mirrors": "🌐 Mirror Management",
+    "config": "⚙️ Configuration"
+}
+```
+
+**Metadata Fields:**
+- `category` - Logical grouping
+- `platform` - "any", "arch", or "systemd"
+- `permission` - "read" or "write"
+- `workflow` - Usage context (research, installation, cleanup, etc.)
+- `related_tools` - Tools commonly used together
+- `prerequisite_tools` - Tools to run first
+
+**Helper Functions:**
+```python
+get_tools_by_category(category) -> List[str]
+get_tools_by_platform(platform) -> List[str]
+get_tools_by_permission(permission) -> List[str]
+get_related_tools(tool_name) -> List[str]
+get_prerequisite_tools(tool_name) -> List[str]
+get_workflow_tools(workflow) -> List[str]
+get_tool_statistics() -> dict
+```
+
+**Use Cases:**
+- Auto-suggest related tools to users
+- Build guided workflows
+- Filter by platform/permission
+- Generate documentation
+- Analyze tool coverage
+
 ### Utilities (`utils.py`)
 
-Helper functions for platform detection and safe execution:
+Core helper functions for platform detection, command execution, and error handling.
 
-```python
-is_arch_linux() -> bool
-  # Checks /etc/arch-release and /etc/os-release
-
-run_command(cmd, timeout, check) -> tuple[int, str, str]
-  # Async subprocess with timeout protection
-
-add_aur_warning(data) -> dict
-  # Wraps AUR data with safety warnings
-
-create_error_response(type, message, details) -> dict
-  # Structured error format for MCP clients
+<CodeGroup>
+```python Platform Detection
+def is_arch_linux() -> bool:
+    """
+    Detect if running on Arch Linux.
+    
+    Checks both /etc/arch-release and /etc/os-release
+    for maximum compatibility.
+    
+    Returns:
+        True if Arch Linux, False otherwise
+    """
+    if Path("/etc/arch-release").exists():
+        return True
+    
+    try:
+        with open("/etc/os-release") as f:
+            return "arch" in f.read().lower()
+    except FileNotFoundError:
+        return False
 ```
+
+```python Safe Command Execution
+async def run_command(
+    cmd: list[str],
+    timeout: int = 10,
+    check: bool = True
+) -> tuple[int, str, str]:
+    """
+    Execute command with timeout protection.
+    
+    Args:
+        cmd: Command and arguments as list
+        timeout: Max execution time in seconds
+        check: Raise exception on non-zero exit
+    
+    Returns:
+        (exit_code, stdout, stderr)
+    
+    Raises:
+        TimeoutError: Command exceeded timeout
+        subprocess.CalledProcessError: Non-zero exit (if check=True)
+    """
+    process = await asyncio.create_subprocess_exec(
+        *cmd,
+        stdout=asyncio.subprocess.PIPE,
+        stderr=asyncio.subprocess.PIPE
+    )
+    
+    try:
+        stdout, stderr = await asyncio.wait_for(
+            process.communicate(),
+            timeout=timeout
+        )
+    except asyncio.TimeoutError:
+        process.kill()
+        raise TimeoutError(f"Command timed out: {cmd}")
+    
+    return process.returncode, stdout.decode(), stderr.decode()
+```
+
+```python AUR Warning Wrapper
+def add_aur_warning(data: dict) -> dict:
+    """
+    Wrap AUR data with safety warnings.
+    
+    Adds prominent warning message about AUR packages
+    being user-produced content that should be reviewed.
+    
+    Args:
+        data: AUR package data
+    
+    Returns:
+        Data with added warning field
+    """
+    return {
+        **data,
+        "warning": (
+            "⚠️  AUR packages are user-produced content. "
+            "Any use of the provided files is at your own risk. "
+            "Always review PKGBUILDs before installing."
+        )
+    }
+```
+
+```python Error Response Format
+def create_error_response(
+    error_type: str,
+    message: str,
+    details: str | None = None
+) -> dict:
+    """
+    Create standardized error response for MCP clients.
+    
+    Ensures consistent error format across all modules
+    for better client-side handling.
+    
+    Args:
+        error_type: Category (NotFound, TimeoutError, etc.)
+        message: Human-readable error message
+        details: Optional additional context
+    
+    Returns:
+        Structured error dict
+    """
+    return {
+        "error": True,
+        "type": error_type,
+        "message": message,
+        "details": details
+    }
+```
+</CodeGroup>
+
+<Info>
+All functions use type hints and comprehensive docstrings following Google style.
+</Info>
 
 ### Arch Wiki Interface (`wiki.py`)
 
@@ -422,16 +659,78 @@ async with httpx.AsyncClient(timeout=10.0) as client:
 
 ### AUR Safety (Defense in Depth)
 
-1. **Warning metadata** - All AUR responses include warnings
-2. **PKGBUILD analysis** - Automated scanning for red flags
-3. **Metadata display** - Show votes, maintainer, age
-4. **Manual review** - Encourage PKGBUILD inspection
-5. **Official first** - Always check official repos first
+Multi-layered security approach for AUR package handling.
 
+<Steps>
+  <Step title="Warning Metadata">
+    **Every AUR response includes prominent warnings:**
+    ```json
+    {
+      "package": "...",
+      "warning": "⚠️  AUR packages are user-produced content. Always review before installing."
+    }
+    ```
+    
+    <Info>
+    Warnings are added automatically by `add_aur_warning()` utility function.
+    </Info>
+  </Step>
+  
+  <Step title="PKGBUILD Analysis">
+    **Automated scanning for 50+ threat patterns:**
+    - 🔴 Critical: `rm -rf /`, fork bombs, kernel module loading
+    - 🟠 Dangerous: `dd`, `mkfs`, direct `/dev` access
+    - 🟡 Suspicious: `curl|sh`, eval, base64 pipes
+    
+    <Warning>
+    Pattern matching has limitations - see below.
+    </Warning>
+  </Step>
+  
+  <Step title="Metadata Evaluation">
+    **Display community trust indicators:**
+    ```python
+    {
+      "votes": 245,           # Popularity
+      "popularity": 8.5,      # Weighted score
+      "maintainer": "...",    # Who maintains it
+      "last_modified": "...", # Recent activity
+      "out_of_date": false    # Maintenance status
+    }
+    ```
+  </Step>
+  
+  <Step title="Manual Review Encouragement">
+    **Tools facilitate human review:**
+    - `aur://package/pkgbuild` - Easy PKGBUILD access
+    - Formatted, syntax-highlighted display
+    - Side-by-side with analysis results
+    
+    <Tip>
+    The AI assistant can explain suspicious patterns in plain English.
+    </Tip>
+  </Step>
+  
+  <Step title="Official First Policy">
+    **Check official repos before AUR:**
+    ```python
+    # install_package_secure workflow
+    1. get_official_package_info()  # Try official first
+    2. if not found:
+    3.     analyze_aur_package()     # Then check AUR
+    ```
+  </Step>
+</Steps>
+
+<Warning>
 **Known Limitations:**
-- Pattern matching can't catch all malicious code
-- Obfuscation can bypass detection
-- User judgment still required
+- ❌ Pattern matching can't catch all malicious code
+- ❌ Obfuscation techniques can bypass detection
+- ❌ Zero-day exploits won't be detected
+- ✅ User judgment is **always** required
+
+**Never blindly trust automated scans!**
+</Warning>
 
 ### Command Execution
 

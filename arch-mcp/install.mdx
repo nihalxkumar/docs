@@ -4,16 +4,15 @@ description: "Install dependencies and verify the server works"
 icon: "download"
 ---
 
-# Installation
+## Quick Start
 
-Install the Arch MCP Server and verify it's working.
-
-## Prerequisites
-
-- **Python 3.11+** - Check version: `python --version`
-- **uv** - Modern Python package manager (recommended)
-
-### Install uv
+<Steps>
+  <Step title="Install uv package manager">
+    **uv** is a fast Python package manager required to run the Arch MCP Server.
+    
+    <Info>
+    **Prerequisites:** Python 3.11+ - Check version: `python --version`
+    </Info>
 
 <CodeGroup>
 ```bash Arch Linux
@@ -45,6 +44,10 @@ powershell -c "irm https://astral.sh/uv/install.ps1 | iex"
 ```
 </CodeGroup>
 
+<Check>
+Verify installation: `uv --version`
+</Check>
+
 <Accordion title="Additional Installation Methods">
 
 #### Manual Installation
@@ -66,31 +69,53 @@ mamba install -c conda-forge uv
 ```
 
 </Accordion>
+  </Step>
 
-## Install Arch MCP Server
+  <Step title="Install Arch MCP Server">
+    Choose the appropriate transport method for your use case.
 
-Install the Arch MCP Server using uvx:
+### STDIO Transport (Recommended)
+
+For standard MCP clients like Claude Desktop, Cursor, and VS Code:
 
 ```bash
 uvx arch-ops-server
 ```
 
-## Configure MCP Client
+<Tip>
+`uvx` automatically manages dependencies and keeps the server isolated from your system Python.
+</Tip>
 
-Connect your AI assistant to the Arch MCP Server by adding this to your MCP client configuration file:
+### HTTP/SSE Transport (Smithery, Docker)
 
-```json
-{
-  "mcpServers": {
-    "arch-ops": {
-      "command": "uvx",
-      "args": ["arch-ops-server"]
-    }
-  }
-}
+For HTTP-based deployments, install with HTTP extras:
+
+```bash
+# Install with HTTP support
+uvx --with arch-ops-server[http] arch-ops-server-http
+
+# Or with uv pip
+uv pip install "arch-ops-server[http]"
+arch-ops-server-http
+
+# Custom port
+PORT=8000 arch-ops-server-http
 ```
 
-### Client-Specific Setup
+**HTTP server features:**
+- Server-Sent Events (SSE) transport
+- Containerized deployment support
+- Smithery platform compatible
+- Health check endpoint at `/health`
+
+<Check>
+Test the server: `echo '{"jsonrpc":"2.0","id":1,"method":"tools/list"}' | uvx arch-ops-server`
+</Check>
+  </Step>
+
+  <Step title="Configure your MCP client">
+
+Add the Arch MCP Server to your AI assistant's configuration:
 
 <Tabs>
   <Tab title="Claude Desktop">
@@ -99,43 +124,292 @@ Connect your AI assistant to the Arch MCP Server by adding this to your MCP clie
     - **Linux:** `~/.config/Claude/claude_desktop_config.json`
     - **Windows:** `%APPDATA%\Claude\claude_desktop_config.json`
     
-    **Steps:**
-    1. Open the config file in a text editor
-    2. Add the JSON configuration above
-    3. Save and close
-    4. **Restart Claude Desktop completely**
+    **Add this configuration:**
+    ```json claude_desktop_config.json
+    {
+      "mcpServers": {
+        "arch-ops": {
+          "command": "uvx",
+          "args": ["arch-ops-server"]
+        }
+      }
+    }
+    ```
+    
+    <Warning>
+    **Must restart Claude Desktop completely** after saving config changes.
+    </Warning>
   </Tab>
   
   <Tab title="Cursor">
-    - ![Install MCP Server](https://cursor.com/deeplink/mcp-install-dark.svg)
-    - OR
-    - **Config file location:**
-      - **macOS/Linux:** `~/.cursor/mcp.json`
-      - **Windows:** `%APPDATA%\Cursor\mcp_config.json`
+    ![Install MCP Server](https://cursor.com/deeplink/mcp-install-dark.svg)
     
-    **Steps:**
-    1. Open the config file in a text editor
-    2. Add the JSON configuration above
-    3. Save and close
-    4. **Restart Cursor**
+    **Or manually configure:**
+    
+    **Config file location:**
+    - **macOS/Linux:** `~/.cursor/mcp.json`
+    - **Windows:** `%APPDATA%\Cursor\mcp_config.json`
+    
+    **Add this configuration:**
+    ```json mcp.json
+    {
+      "mcpServers": {
+        "arch-ops": {
+          "command": "uvx",
+          "args": ["arch-ops-server"]
+        }
+      }
+    }
+    ```
+    
+    <Warning>
+    **Restart Cursor** after saving config changes.
+    </Warning>
   </Tab>
   
   <Tab title="VS Code">
     **Config file location:**
-    - `~/.config/Code/User/mcp_servers.json` (Linux/macOS)
-    - `%APPDATA%\Code\User\mcp_servers.json` (Windows)
+    - **macOS/Linux:** `~/.config/Code/User/mcp_servers.json`
+    - **Windows:** `%APPDATA%\Code\User\mcp_servers.json`
     
-    Requires the MCP extension installed.
+    **Add this configuration:**
+    ```json mcp_servers.json
+    {
+      "mcpServers": {
+        "arch-ops": {
+          "command": "uvx",
+          "args": ["arch-ops-server"]
+        }
+      }
+    }
+    ```
+    
+    <Info>
+    Requires the MCP extension to be installed from the VS Code marketplace.
+    </Info>
+  </Tab>
+  
+  <Tab title="Cline">
+    **Config file location:**
+    - **macOS:** `~/Library/Application Support/Code/User/globalStorage/saoudrizwan.claude-dev/settings/cline_mcp_settings.json`
+    - **Linux:** `~/.config/Code/User/globalStorage/saoudrizwan.claude-dev/settings/cline_mcp_settings.json`
+    - **Windows:** `%APPDATA%\Code\User\globalStorage\saoudrizwan.claude-dev\settings\cline_mcp_settings.json`
+    
+    **Add this configuration:**
+    ```json cline_mcp_settings.json
+    {
+      "mcpServers": {
+        "arch-ops": {
+          "command": "uvx",
+          "args": ["arch-ops-server"]
+        }
+      }
+    }
+    ```
   </Tab>
 </Tabs>
+  </Step>
+
+  <Step title="Verify the connection">
+    After restarting your MCP client, verify that arch-ops appears in the connected MCP servers list.
+    
+    <Check>
+    **Success indicators:**
+    - arch-ops server appears in MCP servers list
+    - Tools are available (try searching the Arch Wiki)
+    - No connection errors in client logs
+    </Check>
+    
+    <Tip>
+    Try your first query: "Search the Arch Wiki for systemd basics"
+    </Tip>
+  </Step>
+</Steps>
 
 
-## Next Step
+## Troubleshooting
 
-<Card
-  title="Usage Examples"
-  icon="terminal"
-  href="/arch-mcp/examples"
->
-  Try common use cases and queries
-</Card>
+<AccordionGroup>
+  <Accordion title="Server not appearing in MCP client" icon="circle-xmark">
+    **Symptoms:**
+    - arch-ops doesn't show in MCP servers list
+    - No tools available from arch-ops
+    
+    **Solutions:**
+    
+    1. **Verify uvx installation:**
+       ```bash
+       which uvx
+       uvx --version
+       ```
+    
+    2. **Check config file syntax:**
+       - Ensure JSON is valid (no trailing commas)
+       - Verify file path is correct for your OS
+    
+    3. **Restart client completely:**
+       - Quit application (not just close window)
+       - Relaunch and check logs
+    
+    4. **Test server directly:**
+       ```bash
+       echo '{"jsonrpc":"2.0","id":1,"method":"tools/list"}' | uvx arch-ops-server
+       ```
+    
+    <Tip>
+    Check client logs for detailed error messages (see log locations in next accordion).
+    </Tip>
+  </Accordion>
+  
+  <Accordion title="Where to find logs" icon="file-lines">
+    **Claude Desktop:**
+    - **macOS:** `~/Library/Logs/Claude/mcp*.log`
+    - **Linux:** `~/.config/Claude/logs/mcp*.log`
+    - **Windows:** `%APPDATA%\Claude\logs\mcp*.log`
+    
+    **Cursor:**
+    - **macOS/Linux:** `~/.cursor/logs/mcp*.log`
+    - **Windows:** `%APPDATA%\Cursor\logs\mcp*.log`
+    
+    **VS Code:**
+    - Open Output panel (View → Output)
+    - Select "MCP" from the dropdown
+    
+    **View logs in real-time:**
+    ```bash
+    # macOS/Linux
+    tail -f ~/Library/Logs/Claude/mcp*.log
+    
+    # Or use your log location
+    ```
+  </Accordion>
+  
+  <Accordion title="uvx command not found" icon="terminal">
+    **Cause:** uv/uvx not installed or not in PATH
+    
+    **Solution:**
+    
+    1. **Install uv** (see Step 1 above)
+    
+    2. **Add to PATH:**
+       ```bash
+       # Add to ~/.bashrc or ~/.zshrc
+       export PATH="$HOME/.local/bin:$PATH"
+       
+       # Reload shell
+       source ~/.bashrc  # or ~/.zshrc
+       ```
+    
+    3. **Verify:**
+       ```bash
+       which uvx
+       uvx --version
+       ```
+  </Accordion>
+  
+  <Accordion title="Permission denied errors" icon="lock">
+    **Cause:** Insufficient permissions for installation directory
+    
+    **Solutions:**
+    
+    1. **Don't use sudo with uvx** - it installs to user directory
+    
+    2. **Check directory permissions:**
+       ```bash
+       ls -la ~/.local/bin
+       chmod +x ~/.local/bin/uvx  # if needed
+       ```
+    
+    3. **Reinstall uv:**
+       ```bash
+       curl -LsSf https://astral.sh/uv/install.sh | sh
+       ```
+  </Accordion>
+  
+  <Accordion title="Connection timeout errors" icon="clock">
+    **Symptoms:**
+    - Tools hang or timeout
+    - "Request timeout" errors
+    
+    **Common Causes:**
+    - Network connectivity issues
+    - Arch Wiki or AUR temporarily unavailable
+    - Firewall blocking requests
+    
+    **Solutions:**
+    
+    1. **Test network connectivity:**
+       ```bash
+       curl -I https://wiki.archlinux.org
+       curl -I https://aur.archlinux.org
+       ping archlinux.org
+       ```
+    
+    2. **Check firewall rules:**
+       - Ensure MCP server can make outbound HTTPS requests
+       - Check corporate proxy settings if applicable
+    
+    3. **Try again later:**
+       - Services might be temporarily down
+       - Check [Arch Linux Status](https://status.archlinux.org/)
+    
+    <Warning>
+    If timeouts persist, check if your network has strict firewall rules blocking the MCP server process.
+    </Warning>
+  </Accordion>
+  
+  <Accordion title="Python version issues" icon="python">
+    **Error:** "Python 3.11+ required"
+    
+    **Solution:**
+    
+    1. **Check Python version:**
+       ```bash
+       python --version
+       python3 --version
+       ```
+    
+    2. **Install Python 3.11+:**
+       ```bash
+       # Arch Linux
+       sudo pacman -S python
+       
+       # macOS (Homebrew)
+       brew install python@3.11
+       
+       # Ubuntu/Debian
+       sudo apt install python3.11
+       ```
+    
+    3. **Verify uv uses correct Python:**
+       ```bash
+       uvx --python python3.11 arch-ops-server
+       ```
+  </Accordion>
+</AccordionGroup>
+
+<Warning>
+**Still having issues?** Check the [Troubleshooting Guide](/arch-mcp/troubleshoot) for more detailed solutions.
+</Warning>
+
+---
+
+## Next Steps
+
+<CardGroup cols={2}>
+  <Card
+    title="Usage Examples"
+    icon="terminal"
+    href="/arch-mcp/examples"
+  >
+    Try common use cases and queries
+  </Card>
+  
+  <Card
+    title="Features Overview"
+    icon="sparkles"
+    href="/arch-mcp/features"
+  >
+    Learn about all capabilities
+  </Card>
+</CardGroup>

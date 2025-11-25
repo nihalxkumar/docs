@@ -1,26 +1,167 @@
 ---
 title: "Troubleshooting"
-description: "Common issues and solutions"
+description: "Common issues, diagnostic commands, and solutions for Arch MCP Server."
 icon: "wrench"
 ---
 
-# Troubleshooting
+
+## Quick Diagnostics
+
+Run these commands to quickly diagnose issues:
+
+<Tabs>
+  <Tab title="Check Installation">
+    **Verify all components are installed correctly:**
+    
+    ```bash
+    # Check uv/uvx installation
+    uv --version
+    uvx --version
+    
+    # Check Python version (need 3.11+)
+    python --version
+    python3 --version
+    
+    # Test arch-ops-server directly
+    echo '{"jsonrpc":"2.0","id":1,"method":"tools/list"}' | uvx arch-ops-server
+    
+    # Check if server can be found
+    which arch-ops-server
+    uvx --help arch-ops-server
+    ```
+    
+    <Check>
+    **Expected:** All version commands return valid versions, server responds with tools list
+    </Check>
+  </Tab>
+  
+  <Tab title="Check Connectivity">
+    **Test network access to Arch services:**
+    
+    ```bash
+    # Test Arch Wiki access
+    curl -I https://wiki.archlinux.org
+    
+    # Test AUR access
+    curl -I https://aur.archlinux.org
+    
+    # Test AUR RPC API
+    curl "https://aur.archlinux.org/rpc?v=5&type=info&arg=yay"
+    
+    # Check general connectivity
+    ping -c 3 archlinux.org
+    
+    # Test DNS resolution
+    nslookup wiki.archlinux.org
+    ```
+    
+    <Check>
+    **Expected:** All services return 200 OK or 301/302 redirects
+    </Check>
+  </Tab>
+  
+  <Tab title="Check Client Logs">
+    **View MCP client logs for errors:**
+    
+    ```bash
+    # Claude Desktop (macOS)
+    tail -f ~/Library/Logs/Claude/mcp*.log
+    
+    # Claude Desktop (Linux)
+    tail -f ~/.config/Claude/logs/mcp*.log
+    
+    # Cursor (macOS/Linux)
+    tail -f ~/.cursor/logs/mcp*.log
+    
+    # VS Code - Check Output panel (View → Output → MCP)
+    
+    # Filter for errors only
+    grep -i error ~/.config/Claude/logs/mcp*.log
+    ```
+    
+    <Info>
+    Look for error messages containing "arch-ops", "spawn", or "ENOENT"
+    </Info>
+  </Tab>
+  
+  <Tab title="Check Configuration">
+    **Verify MCP client configuration:**
+    
+    ```bash
+    # Claude Desktop (macOS)
+    cat ~/Library/Application\ Support/Claude/claude_desktop_config.json
+    
+    # Claude Desktop (Linux)
+    cat ~/.config/Claude/claude_desktop_config.json
+    
+    # Cursor
+    cat ~/.cursor/mcp.json
+    
+    # Validate JSON syntax
+    python -m json.tool < claude_desktop_config.json
+    
+    # Check file permissions
+    ls -la ~/.config/Claude/claude_desktop_config.json
+    ```
+    
+    <Warning>
+    Common issues: trailing commas in JSON, wrong quotes, missing braces
+    </Warning>
+  </Tab>
+</Tabs>
+
+---
 
 ## Verify Installation
 
 After installing and configuring the Arch MCP Server:
 
 <Steps>
-  <Step title="Client Settings">
-    Go to settings tab and Look for MCP tools icon in your client.
+  <Step title="Check client settings">
+    Go to settings tab and look for MCP tools icon in your client.
+    
+    <Info>
+    **Location varies by client:**
+    - Claude Desktop: Settings → Features → Model Context Protocol
+    - Cursor: Settings → MCP Servers
+    - VS Code: MCP extension sidebar
+    </Info>
   </Step>
   
-  <Step title="Find arch-ops Server">
-    You should see "arch-ops" listed as a connected MCP server
+  <Step title="Find arch-ops server">
+    You should see "arch-ops" listed as a connected MCP server.
+    
+    <Check>
+    **Status should be:** Connected (green indicator)
+    </Check>
+    
+    <Warning>
+    If status shows "Disconnected" (red), see troubleshooting below.
+    </Warning>
   </Step>
   
-  <Step title="Test a Simple Query">
-    Try: `Search the Arch Wiki for 'installation guide'`
+  <Step title="Test a simple query">
+    Try a basic query to verify the server responds:
+    
+    ```
+    Search the Arch Wiki for 'installation guide'
+    ```
+    
+    <Check>
+    **Expected:** Results from Arch Wiki with titles and links
+    </Check>
+  </Step>
+  
+  <Step title="Test a tool">
+    Try a specific tool to verify functionality:
+    
+    ```
+    Use search_aur to find packages matching "neofetch"
+    ```
+    
+    <Check>
+    **Expected:** List of AUR packages with vote counts
+    </Check>
   </Step>
 </Steps>
 
@@ -43,47 +184,176 @@ After installing and configuring the Arch MCP Server:
 
 ## Server Won't Start
 
-<Accordion title="uvx not found">
-**Error:** `command not found: uvx` or permission errors
-
-**Solution:**
-- Install uv first: `pip install uv` or use your package manager
-- Verify uvx is available: `uvx --version`
-- Check if uv is in your PATH: `which uv`
-</Accordion>
-
-<Accordion title="Python version error">
-**Error:** `Python 3.11+ required`
-
-**Solution:**
-```bash
-python --version  # Check current version
-# Install Python 3.11+ through your package manager
-sudo pacman -S python  # on Arch
-```
-</Accordion>
-
-<Accordion title="Missing dependencies">
-**Error:** `ModuleNotFoundError` or package installation fails
-
-**Solution:**
-```bash
-uvx --reinstall arch-ops-server  # Reinstall the package
-# or
-uvx --upgrade arch-ops-server    # Upgrade to latest version
-```
-</Accordion>
-
-<Accordion title="MCP server doesn't connect">
-**Error:** Server shows in tools but says "disconnected"
-
-**Solution:**
-1. Verify Python is installed: `python --version`
-2. Test server manually: `uvx arch-ops-server`
-3. Check uvx installation: `uvx --version`
-4. Restart your MCP client
-5. Check client logs for specific errors
-</Accordion>
+<AccordionGroup>
+  <Accordion title="uvx not found" icon="terminal">
+    **Error:** `command not found: uvx` or permission errors
+    
+    **Diagnosis:**
+    ```bash
+    which uvx
+    which uv
+    echo $PATH | grep -o "[^:]*bin"
+    ```
+    
+    **Solutions:**
+    
+    1. **Install uv/uvx:**
+       ```bash
+       # Arch Linux
+       sudo pacman -S uv
+       
+       # Homebrew
+       brew install uv
+       
+       # pip
+       pip install uv
+       
+       # Direct install
+       curl -LsSf https://astral.sh/uv/install.sh | sh
+       ```
+    
+    2. **Add to PATH:**
+       ```bash
+       # Add to ~/.bashrc or ~/.zshrc
+       export PATH="$HOME/.local/bin:$PATH"
+       
+       # Reload shell
+       source ~/.bashrc  # or ~/.zshrc
+       ```
+    
+    3. **Verify installation:**
+       ```bash
+       uvx --version
+       which uvx
+       ```
+    
+    <Tip>
+    The uv installer automatically adds to PATH, but you may need to restart your terminal.
+    </Tip>
+  </Accordion>
+  
+  <Accordion title="Python version error" icon="python">
+    **Error:** `Python 3.11+ required`
+    
+    **Check current version:**
+    ```bash
+    python --version
+    python3 --version
+    python3.11 --version
+    ```
+    
+    **Install Python 3.11+:**
+    
+    <CodeGroup>
+    ```bash Arch Linux
+    sudo pacman -S python
+    ```
+    
+    ```bash Ubuntu/Debian
+    sudo apt update
+    sudo apt install python3.11
+    ```
+    
+    ```bash macOS
+    brew install python@3.11
+    ```
+    
+    ```bash From Source
+    # Download from python.org and compile
+    wget https://www.python.org/ftp/python/3.11.0/Python-3.11.0.tgz
+    tar -xf Python-3.11.0.tgz
+    cd Python-3.11.0
+    ./configure && make && sudo make install
+    ```
+    </CodeGroup>
+    
+    **Force specific Python version:**
+    ```bash
+    uvx --python python3.11 arch-ops-server
+    ```
+  </Accordion>
+  
+  <Accordion title="Missing dependencies" icon="box">
+    **Error:** `ModuleNotFoundError` or package installation fails
+    
+    **Common missing modules:**
+    - `httpx` - HTTP client library
+    - `beautifulsoup4` - HTML parsing
+    - `markdownify` - HTML to Markdown conversion
+    - `mcp` - MCP SDK
+    
+    **Solutions:**
+    
+    1. **Reinstall completely:**
+       ```bash
+       uvx --reinstall arch-ops-server
+       ```
+    
+    2. **Upgrade to latest version:**
+       ```bash
+       uvx --upgrade arch-ops-server
+       ```
+    
+    3. **Clear uv cache:**
+       ```bash
+       uv cache clean
+       uvx --reinstall arch-ops-server
+       ```
+    
+    4. **Manual installation:**
+       ```bash
+       uv pip install arch-ops-server
+       arch-ops-server
+       ```
+    
+    <Warning>
+    If issues persist, check if you have conflicting Python package managers (pip, conda, pipx).
+    </Warning>
+  </Accordion>
+  
+  <Accordion title="MCP server doesn't connect" icon="plug">
+    **Error:** Server shows in tools but says "disconnected"
+    
+    **Diagnosis steps:**
+    
+    1. **Test server directly:**
+       ```bash
+       # Should output JSON-RPC response
+       echo '{"jsonrpc":"2.0","id":1,"method":"tools/list"}' | uvx arch-ops-server
+       ```
+    
+    2. **Check client logs:**
+       ```bash
+       # macOS
+       tail -n 50 ~/Library/Logs/Claude/mcp*.log | grep arch-ops
+       
+       # Linux
+       tail -n 50 ~/.config/Claude/logs/mcp*.log | grep arch-ops
+       ```
+    
+    3. **Verify configuration:**
+       ```bash
+       # Check JSON syntax
+       python -m json.tool < ~/.config/Claude/claude_desktop_config.json
+       ```
+    
+    **Common causes:**
+    - Syntax error in config file
+    - Wrong command path in config
+    - Server crashes on startup
+    - Permission issues
+    
+    **Solutions:**
+    - Fix JSON syntax errors (trailing commas, quotes)
+    - Use full path: `"/usr/local/bin/uvx"` instead of `"uvx"`
+    - Restart client completely (quit and relaunch)
+    - Check client logs for specific error messages
+    
+    <Info>
+    **Expected log output:** `"arch-ops server connected successfully"`
+    </Info>
+  </Accordion>
+</AccordionGroup>
 
 ## Tools Return Errors
 

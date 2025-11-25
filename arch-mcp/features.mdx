@@ -4,8 +4,6 @@ description: "Overview of Arch MCP capabilities"
 icon: "sparkles"
 ---
 
-# Core Features
-
 Arch MCP Server provides three types of capabilities that work together to enable intelligent interaction with the Arch Linux ecosystem.
 
 ## 🔍 Resources
@@ -17,7 +15,7 @@ URI-based access to Arch ecosystem data - read documentation, package info, and 
   icon="folder-open"
   href="/arch-mcp/resources"
 >
-  **23 URI schemes** for accessing Arch Wiki, AUR packages, official repos, system data, logs, news, configuration, and mirrors
+  **23+ URI schemes** for accessing Arch Wiki, AUR packages, official repos, system data, logs, news, configuration, and mirrors
 </Card>
 
 <Frame caption="Direct access to Arch Wiki documentation through URI schemes">
@@ -44,7 +42,7 @@ Executable functions for search, security analysis, and package installation.
   icon="wrench"
   href="/arch-mcp/tools"
 >
-  **54+ tools** covering search, security analysis, package lifecycle, system diagnostics, news monitoring, mirror management, and configuration analysis
+  **41 tools** organized into 9 categories: discovery, lifecycle, maintenance, organization, security, monitoring, history, mirrors, and configuration
 </Card>
 
 <Frame caption="Security analysis tools providing comprehensive package safety checks">
@@ -71,7 +69,7 @@ Guided multi-step workflows that combine resources and tools for complex tasks.
   icon="messages"
   href="/arch-mcp/prompts"
 >
-  **4 intelligent workflows** for troubleshooting, security audits, dependency analysis, and safe system updates
+  **8 intelligent workflows** for troubleshooting, security audits, dependency analysis, system updates, cleanup, and health checks
 </Card>
 
 <Frame caption="Intelligent workflows that combine multiple tools for complex tasks">
@@ -87,46 +85,210 @@ Guided multi-step workflows that combine resources and tools for complex tasks.
 - Audit AUR packages before installation
 - Plan installations by analyzing dependencies
 
+## Feature Comparison
+
+Quick reference to understand what each capability type offers:
+
+| Capability | Count | Access Method | Use When | Example |
+|-----------|-------|---------------|----------|---------|
+| **Resources** | 23+ | URI schemes | Need raw data or documentation | `archwiki://Systemd` |
+| **Tools** | 41 | Function calls | Need to perform operations | `search_aur query="vim"` |
+| **Prompts** | 8 | Workflow triggers | Need guided multi-step process | `audit_aur_package` |
+
+<Info>
+**Best Practice:** Combine all three types for powerful workflows! Resources provide data, Tools perform operations, and Prompts orchestrate complex tasks.
+</Info>
+
+---
+
 ## How They Work Together
 
-**Example: Installing a Custom AUR Package**
+See how Resources, Tools, and Prompts combine to solve real problems.
 
-Let's say you want to install `neofetch` from the AUR. Here's how the MCP components work together:
+### Interactive Workflow Example
 
-```
-You: "I want to install neofetch from AUR, but I'm concerned about security"
+<Steps>
+  <Step title="User asks a security question">
+    **User Query:**
+    ```
+    I want to install neofetch from AUR, but I'm concerned about security
+    ```
+    
+    <Info>
+    The AI assistant automatically determines the best workflow for this request.
+    </Info>
+  </Step>
+  
+  <Step title="Resource: Fetch PKGBUILD">
+    **Resource Access:**
+    ```
+    aur://neofetch/pkgbuild
+    ```
+    
+    The system uses the PKGBUILD resource to fetch the raw build script for inspection.
+    
+    <Tip>
+    Resources provide read-only access to data without executing anything.
+    </Tip>
+  </Step>
+  
+  <Step title="Tool: Analyze PKGBUILD Safety">
+    **Tool Execution:**
+    ```
+    analyze_pkgbuild_safety package="neofetch"
+    ```
+    
+    Scans for security threats:
+    - ✅ Dangerous commands (`rm -rf /`, `dd`, etc.)
+    - ✅ Suspicious downloads (`curl|sh`, `wget|bash`)
+    - ✅ Obfuscated code (base64, eval)
+    - ✅ Privilege escalation attempts
+    
+    <Warning>
+    This tool uses pattern matching - always manually review PKGBUILDs too!
+    </Warning>
+  </Step>
+  
+  <Step title="Resource: Get Package Metadata">
+    **Resource Access:**
+    ```
+    aur://neofetch/info
+    ```
+    
+    Provides community trust indicators:
+    - Popularity votes (2,500+)
+    - Maintainer information
+    - Last update date
+    - Package age and history
+  </Step>
+  
+  <Step title="Tool: Evaluate Trust Score">
+    **Tool Execution:**
+    ```
+    analyze_package_metadata_risk package="neofetch"
+    ```
+    
+    Evaluates:
+    - Is the maintainer trustworthy?
+    - How popular is this package?
+    - Is it actively maintained?
+    - Any red flags in metadata?
+    
+    <Check>
+    Trust score: 85/100 - High community trust
+    </Check>
+  </Step>
+  
+  <Step title="Tool: Secure Installation">
+    **Tool Execution:**
+    ```
+    install_package_secure package="neofetch" aur=true
+    ```
+    
+    If security checks pass:
+    - Presents comprehensive security report
+    - Asks for final confirmation
+    - Handles installation with AUR helper
+    - Logs transaction for audit trail
+    
+    <Tip>
+    Use `install_package_secure` instead of manual installation for built-in safety!
+    </Tip>
+  </Step>
+</Steps>
 
-1. The system uses aur://neofetch/pkgbuild to fetch the PKGBUILD file
-   ↓ This gives you the raw build script to inspect
+**Result:** You get a secure, well-informed AUR package installation with full understanding of what's being installed and why it's safe.
 
-2. The analyze_pkgbuild_safety tool scans the PKGBUILD for:
-   - Dangerous commands like "rm -rf /"
-   - Suspicious downloads or network activity
-   - Obfuscated code or potential malware
+<Note>
+**Automation:** The entire workflow above can be triggered with a single prompt: `audit_aur_package package="neofetch"`
+</Note>
 
-3. Meanwhile, aur://neofetch/info provides package metadata:
-   - Popularity votes and maintainer info
-   - Last update date and package age
-   - Community trust indicators
+---
 
-4. The analyze_package_metadata_risk tool evaluates:
-   - Is the maintainer trustworthy?
-   - How popular is this package?
-   - When was it last updated?
+### Workflow Visualization
 
-5. If everything checks out, install_package_secure handles the installation
-   with additional safety checks and confirmation prompts
-```
+<Mermaid
+  chart={`
+    graph TD
+    A[User Query] -->|Natural Language| B{AI Assistant}
+    B -->|Fetch Data| C[Resources]
+    B -->|Perform Actions| D[Tools]
+    B -->|Complex Task| E[Prompts]
+    
+    C --> F[archwiki://]
+    C --> G[aur://pkgbuild]
+    C --> H[aur://info]
+    
+    D --> I[analyze_pkgbuild_safety]
+    D --> J[analyze_metadata_risk]
+    D --> K[install_package_secure]
+    
+    E --> L[audit_aur_package]
+    E --> M[troubleshoot]
+    E --> N[analyze_dependencies]
+    
+    L --> C
+    L --> D
+    M --> C
+    M --> D
+    N --> C
+    N --> D
+    
+    F --> O[Markdown Content]
+    G --> P[PKGBUILD File]
+    H --> Q[JSON Metadata]
+    
+    I --> R[Security Report]
+    J --> S[Trust Score]
+    K --> T[Installation Result]
+    
+    O --> U[AI Response]
+    P --> U
+    Q --> U
+    R --> U
+    S --> U
+    T --> U
+  `}
+/>
 
-This natural workflow lets you safely explore and install AUR packages while understanding exactly what you're getting into.
+<Tip>
+**Pro Tip:** You don't need to know all this! Just ask in natural language, and the AI figures out the optimal workflow.
+</Tip>
 
-## Quick Reference
+## Capability Statistics
 
-| Type | Count | Access Method | Use Case |
-|------|-------|---------------|----------|
-| **Resources** | 23 | URI schemes | Direct data access |
-| **Tools** | 54+ | Function calls | Single operations |
-| **Prompts** | 4 | Workflow triggers | Complex tasks |
+<CardGroup cols={3}>
+  <Card title="23 Resources" icon="database">
+    URI-based data access for Wiki pages, PKGBUILDs, package info, and system data
+  </Card>
+  <Card title="41 Tools" icon="wrench">
+    Executable functions across 9 categories for all Arch Linux operations
+  </Card>
+  <Card title="8 Prompts" icon="messages">
+    Guided workflows for troubleshooting, auditing, system updates, cleanup, and health checks
+  </Card>
+</CardGroup>
+
+### Tools by Category
+
+| Category | Tool Count | Permission | Common Uses |
+|----------|-----------|------------|-------------|
+| 🔍 Discovery & Information | 6 | Read | Search Wiki/AUR, get news |
+| 📦 Package Lifecycle | 4 | Write | Install, update, remove packages |
+| 🔧 Package Maintenance | 7 | Mixed | Verify, mark, clean orphans |
+| 📁 File Organization | 5 | Read | Find owners, list files, search |
+| 🔒 Security Analysis | 2 | Read | PKGBUILD/metadata scanning |
+| 📊 System Monitoring | 5 | Read | Disk space, services, logs |
+| 📜 Transaction History | 4 | Read | Audit package operations |
+| 🌐 Mirror Management | 4 | Read | Test speed, suggest mirrors |
+| ⚙️ Configuration | 4 | Read | Parse pacman/makepkg configs |
+
+<Info>
+**Platform Support:**
+- **17 tools** work on any platform (use remote APIs)
+- **24 tools** require Arch Linux (use local system)
+- **All resources** work on any platform
+</Info>
 
 ## Learn More
 

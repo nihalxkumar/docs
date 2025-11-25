@@ -18,6 +18,8 @@ Prompts are intelligent workflows that:
 
 Unlike individual tools, prompts orchestrate multiple operations and make intelligent decisions based on intermediate results.
 
+Arch MCP Server provides **8 intelligent workflows** that guide you through complex tasks.
+
 ## Available Prompts
 
 ### troubleshoot_issue
@@ -159,6 +161,184 @@ Plan package installation by mapping dependencies and determining optimal instal
 - Flags potential conflicts
 - Highlights optional features
 - Suggests pre-installation steps
+
+---
+
+### safe_system_update
+
+Enhanced system update workflow with pre-update safety checks.
+
+**Purpose:** Safely update your system by checking for critical news, disk space, and system health before updating.
+
+**Workflow:**
+1. Check for critical Arch Linux news
+2. Review news since last system update
+3. Verify sufficient disk space
+4. List available updates
+5. Check for failed services
+6. Provide update recommendations
+
+**When to use:**
+- Before running system updates
+- Regular maintenance routines
+- After seeing Arch news notifications
+- When preparing for major updates
+
+**Example Usage:**
+```
+"I want to update my system but want to make sure it's safe to do so"
+```
+
+**Safety Checks:**
+- ✓ Critical news requiring manual intervention
+- ✓ Disk space availability
+- ✓ Failed systemd services
+- ✓ Database freshness
+- ✓ Pacman cache status
+
+---
+
+### cleanup_system
+
+Comprehensive system cleanup workflow to free disk space.
+
+**Purpose:** Clean up orphaned packages, package cache, and verify system integrity.
+
+**Workflow:**
+1. List orphaned packages
+2. Calculate reclaimable space
+3. Check pacman cache statistics
+4. Remove orphans (with confirmation)
+5. Clean package cache
+6. Verify package integrity
+
+**When to use:**
+- Low disk space
+- Regular system maintenance
+- After removing large packages
+- Cleaning up test installations
+
+**Example Input:**
+```
+"My disk is almost full, can you help clean up my system?"
+```
+
+**Parameters:**
+- `aggressive` (optional): Perform more aggressive cleanup (default: false)
+
+**What it cleans:**
+- Orphaned packages
+- Old package cache files
+- Unused dependencies
+- Corrupted package files (identifies for manual review)
+
+---
+
+### package_investigation
+
+Deep research and security analysis before installing a package.
+
+**Purpose:** Thoroughly investigate a package's safety, dependencies, and characteristics before installation.
+
+**Workflow:**
+1. Check official repositories first
+2. If AUR: fetch metadata and analyze trust
+3. Fetch and analyze PKGBUILD
+4. Review dependencies and conflicts
+5. Check for known issues
+6. Generate comprehensive report
+
+**When to use:**
+- Before installing unfamiliar packages
+- When package name seems suspicious
+- Security-conscious installations
+- Understanding package impact
+
+**Example Input:**
+```
+"I want to install 'signal-desktop', what should I know about it?"
+```
+
+**Investigation Areas:**
+- Package source (official vs AUR)
+- Security analysis
+- Dependency tree
+- Disk space requirements
+- Known issues or warnings
+
+---
+
+### mirror_optimization
+
+Test and configure optimal package mirrors based on your location.
+
+**Purpose:** Find and configure the fastest repository mirrors for better download speeds.
+
+**Workflow:**
+1. List currently active mirrors
+2. Test mirror latency
+3. Suggest fastest mirrors by location
+4. Check mirrorlist health
+5. Provide configuration recommendations
+
+**When to use:**
+- Slow package downloads
+- After moving to new location/region
+- Mirror connectivity issues
+- Initial system setup
+
+**Example Input:**
+```
+"My package downloads are really slow, can you help optimize my mirrors?"
+```
+
+**Parameters:**
+- `country` (optional): Country code for mirror suggestions (e.g., "US", "DE", "JP")
+
+**Optimization Steps:**
+- Tests mirror response times
+- Ranks by latency
+- Filters by protocol (HTTPS preferred)
+- Checks mirror sync status
+- Provides mirrorlist configuration
+
+---
+
+### system_health_check
+
+Comprehensive system diagnostic to identify potential issues.
+
+**Purpose:** Perform a complete health check of your Arch Linux system.
+
+**Workflow:**
+1. Get system information (kernel, memory, uptime)
+2. Check disk space usage
+3. Identify failed systemd services
+4. Review boot logs for errors
+5. Check package database freshness
+6. Verify pacman cache health
+7. List recent failed transactions
+8. Generate health report with recommendations
+
+**When to use:**
+- Troubleshooting system issues
+- Regular health monitoring
+- After system updates
+- Before major system changes
+
+**Example Usage:**
+```
+"Can you check if my system is healthy? Something feels off"
+```
+
+**Diagnostic Areas:**
+- ✓ System resources (CPU, memory, disk)
+- ✓ Systemd service status
+- ✓ Package manager health
+- ✓ Recent errors and warnings
+- ✓ Database and cache status
+
+---
 
 ## Prompt Usage Patterns
 
