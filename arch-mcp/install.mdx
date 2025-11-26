@@ -86,27 +86,15 @@ uvx arch-ops-server
 `uvx` automatically manages dependencies and keeps the server isolated from your system Python.
 </Tip>
 
-### HTTP/SSE Transport (Smithery, Docker)
+### HTTP/SSE Transport (Smithery)
 
-For HTTP-based deployments, install with HTTP extras:
+For HTTP-based deployments via Smithery, follow the setup instructions at:
 
-```bash
-# Install with HTTP support
-uvx --with arch-ops-server[http] arch-ops-server-http
+**[https://smithery.ai/server/@nihalxkumar/arch-mcp](https://smithery.ai/server/@nihalxkumar/arch-mcp)**
 
-# Or with uv pip
-uv pip install "arch-ops-server[http]"
-arch-ops-server-http
-
-# Custom port
-PORT=8000 arch-ops-server-http
-```
-
-**HTTP server features:**
-- Server-Sent Events (SSE) transport
-- Containerized deployment support
-- Smithery platform compatible
-- Health check endpoint at `/health`
+<Info>
+Smithery provides one-click setup with automatic configuration for Claude Desktop, Cursor, and other MCP clients.
+</Info>
 
 <Check>
 Test the server: `echo '{"jsonrpc":"2.0","id":1,"method":"tools/list"}' | uvx arch-ops-server`
