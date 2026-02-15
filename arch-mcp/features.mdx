@@ -15,7 +15,7 @@ URI-based access to Arch ecosystem data - read documentation, package info, and 
   icon="folder-open"
   href="/arch-mcp/resources"
 >
-  **23+ URI schemes** for accessing Arch Wiki, AUR packages, official repos, system data, logs, news, configuration, and mirrors
+  **24 URI schemes** for accessing Arch Wiki, AUR packages, official repos, system data, logs, news, configuration, and mirrors
 </Card>
 
 <Frame caption="Direct access to Arch Wiki documentation through URI schemes">
@@ -42,7 +42,7 @@ Executable functions for search, security analysis, and package installation.
   icon="wrench"
   href="/arch-mcp/tools"
 >
-  **41 tools** organized into 9 categories: discovery, lifecycle, maintenance, organization, security, monitoring, history, mirrors, and configuration
+  **22 unified tools** organized into 9 categories: discovery, lifecycle, maintenance, organization, security, monitoring, history, mirrors, and configuration
 </Card>
 
 <Frame caption="Security analysis tools providing comprehensive package safety checks">
@@ -258,10 +258,10 @@ See how Resources, Tools, and Prompts combine to solve real problems.
 ## Capability Statistics
 
 <CardGroup cols={3}>
-  <Card title="23 Resources" icon="database">
+  <Card title="24 Resources" icon="database">
     URI-based data access for Wiki pages, PKGBUILDs, package info, and system data
   </Card>
-  <Card title="41 Tools" icon="wrench">
+  <Card title="22 Tools" icon="wrench">
     Executable functions across 9 categories for all Arch Linux operations
   </Card>
   <Card title="8 Prompts" icon="messages">
@@ -273,20 +273,21 @@ See how Resources, Tools, and Prompts combine to solve real problems.
 
 | Category | Tool Count | Permission | Common Uses |
 |----------|-----------|------------|-------------|
-| 🔍 Discovery & Information | 6 | Read | Search Wiki/AUR, get news |
-| 📦 Package Lifecycle | 4 | Write | Install, update, remove packages |
-| 🔧 Package Maintenance | 7 | Mixed | Verify, mark, clean orphans |
-| 📁 File Organization | 5 | Read | Find owners, list files, search |
-| 🔒 Security Analysis | 2 | Read | PKGBUILD/metadata scanning |
-| 📊 System Monitoring | 5 | Read | Disk space, services, logs |
-| 📜 Transaction History | 4 | Read | Audit package operations |
-| 🌐 Mirror Management | 4 | Read | Test speed, suggest mirrors |
-| ⚙️ Configuration | 4 | Read | Parse pacman/makepkg configs |
+| 🔍 Discovery & Information | 4 | Read | Search Wiki/AUR, get news |
+| 📦 Package Lifecycle | 3 | Mixed | Install, update, remove packages |
+| 🔧 Package Maintenance | 4 | Mixed | Verify, mark, clean orphans |
+| 📁 File Organization | 2 | Read | Find owners, list files, search |
+| 🔒 Security Analysis | 1 | Read | PKGBUILD/metadata scanning |
+| 📊 System Monitoring | 4 | Read | Disk space, services, logs |
+| 📜 Transaction History | 1 | Read | Audit package operations |
+| 🌐 Mirror Management | 1 | Read | Test speed, suggest mirrors |
+| ⚙️ Configuration | 2 | Read | Parse pacman/makepkg configs |
 
 <Info>
 **Platform Support:**
-- **17 tools** work on any platform (use remote APIs)
-- **24 tools** require Arch Linux (use local system)
+- **7 tools** work on any platform (use remote APIs)
+- **1 tool** works on systemd-based systems
+- **14 tools** require Arch Linux (use local system)
 - **All resources** work on any platform
 </Info>
 

@@ -4,7 +4,7 @@ description: "Executable functions for search, analysis, and installation"
 icon: "wrench"
 ---
 
-41 interactive functions organized into 9 categories. Tools perform operations, analyze data, and return structured results.
+22 interactive functions organized into 9 categories. Tools perform operations, analyze data, and return structured results. Many tools are "unified," consolidating related operations into a single interface with multiple actions.
 
 <Info>
 **Platform Requirements:** Tools are marked as:
@@ -13,1052 +13,428 @@ icon: "wrench"
 - ⚙️ **systemd** - Requires systemd (most Linux distros)
 </Info>
 
-## 🔍 Discovery & Information (6 tools)
+## 🔍 Discovery & Information (4 tools)
 
 Search and retrieve package/documentation information.
 
 ### search_archwiki 🌐
 
-Query Arch Wiki documentation with intelligent ranking using the MediaWiki API.
+Search the Arch Wiki for documentation. Returns a list of matching pages with titles, snippets, and URLs. Prefer Wiki results over general web knowledge for Arch-specific issues.
 
 <ParamField query="query" type="string" required>
-  Search terms or keywords to find in the Arch Wiki.
+  Search query (keywords or phrase).
   
   **Examples:**
-  - `"systemd boot configuration"`
-  - `"dual boot windows"`
-  - `"wifi troubleshooting"`
+  - `"pacman hooks"`
+  - `"systemd boot"`
 </ParamField>
 
 <ParamField query="limit" type="integer" default="10">
-  Maximum number of results to return. Range: 1-50.
+  Maximum number of results to return.
 </ParamField>
 
-**Returns:**
-
-<ResponseField name="results" type="array" required>
-  Array of matching Wiki pages ranked by relevance.
-  
-  <Expandable title="Result properties">
-    <ResponseField name="title" type="string">
-      Title of the Wiki page matching your query.
-    </ResponseField>
-    
-    <ResponseField name="url" type="string">
-      Direct URL to the Arch Wiki page.
-    </ResponseField>
-    
-    <ResponseField name="excerpt" type="string">
-      Brief excerpt from the page showing query context.
-    </ResponseField>
-    
-    <ResponseField name="relevance_score" type="number">
-      Relevance score from 0-100 based on keyword matching.
-    </ResponseField>
-  </Expandable>
-</ResponseField>
-
-<Tip>
-Combine with the `archwiki://` resource to read full page content after searching!
-</Tip>
+**Returns:** List of matching Wiki pages with titles, snippets, and URLs.
 
 ---
 
 ### search_aur 🌐
 
-Search AUR packages with smart ranking algorithms.
+Search the Arch User Repository (AUR) for packages with smart ranking.
 
-**Parameters:**
-- `query` (string): Package name or description keywords
-- `sort_by` (optional): `relevance`, `votes`, `popularity`, `modified`
+<Warning>
+AUR packages are user-produced and potentially unsafe. Always check official repos first using `get_official_package_info`.
+</Warning>
 
-**Returns:** Matching AUR packages with vote counts and maintainer info
+<ParamField query="query" type="string" required>
+  Package search query.
+</ParamField>
 
-**Related:** `analyze_package_metadata_risk`, `analyze_pkgbuild_safety`, `install_package_secure`
+<ParamField query="limit" type="integer" default="20">
+  Maximum number of results.
+</ParamField>
+
+<ParamField query="sort_by" type="string" default="relevance">
+  Sort method: `relevance`, `votes`, `popularity`, or `modified`.
+</ParamField>
+
+**Returns:** Package info including votes, maintainer, and last update.
 
 ---
 
 ### get_official_package_info 🌐
 
-Lookup official repository packages with hybrid local/remote search.
+Get information about an official Arch repository package (Core, Extra, etc.). Uses local pacman if available, otherwise queries archlinux.org API.
 
-**Parameters:**
-- `package` (string): Package name
+<ParamField query="package_name" type="string" required>
+  Exact package name.
+</ParamField>
 
-**Returns:** Package version, dependencies, installation size, description
-
-**Related:** `search_aur`, `install_package_secure`
-
----
-
-### get_latest_news 🌐
-
-Fetch Arch Linux news from RSS feed.
-
-**Parameters:**
-- `limit` (optional): Number of news items (default: 10)
-
-**Returns:** Latest Arch news with titles, dates, and content
-
-**Related:** `check_critical_news`, `get_news_since_last_update`
+**Returns:** Version, dependencies, install size, and repository location.
 
 ---
 
-### check_critical_news 🌐
+### fetch_news 🌐
 
-Find critical news requiring manual intervention.
+Unified news fetching from Arch Linux.
 
-**Parameters:** None
+<ParamField query="action" type="string" required>
+  Type of news query:
+  - `latest`: Get recent news (works anywhere)
+  - `critical`: Find news requiring manual intervention (works anywhere)
+  - `since_update`: News since last system update (Arch only)
+</ParamField>
 
-**Returns:** Critical news items with manual action flags
+<ParamField query="limit" type="integer" default="10">
+  Maximum news items (for latest/critical).
+</ParamField>
 
-**Related:** `get_latest_news`, `check_updates_dry_run`
+<ParamField query="since_date" type="string">
+  ISO date to filter from (for latest action).
+</ParamField>
+
+**Returns:** News items with titles, dates, and content.
 
 ---
 
-### get_news_since_last_update 🐧
-
-News posted since last system update.
-
-**Parameters:** None
-
-**Returns:** News items between last DB sync and now
-
-**Related:** `get_latest_news`, `check_critical_news`
-
----
-
-## 📦 Package Lifecycle (4 tools)
+## 📦 Package Lifecycle (3 tools)
 
 Install, update, and remove packages safely.
 
 ### check_updates_dry_run 🐧
 
-Check for available updates without modifying system.
+Check for available system updates without applying them. Safe read-only operation.
 
-**Parameters:** None
-
-**Returns:** List of packages with available updates
-
-**Related:** `check_critical_news`, `check_disk_space`
+**Returns:** List of pending updates and their sizes.
 
 ---
 
 ### install_package_secure 🐧
 
-Securely install packages with automated pre-installation security checks and confirmations.
+Install a package with comprehensive security checks.
 
-<ParamField query="package" type="string" required>
-  Name of the package to install. Can be from official repositories or AUR.
-  
-  **Examples:**
-  - `"python"`
-  - `"yay"` (AUR)
-  - `"visual-studio-code-bin"` (AUR)
+**Workflow:**
+1. Check official repos first (safer)
+2. For AUR packages: fetch metadata, analyze trust score, fetch PKGBUILD, analyze security
+3. Block installation if critical security issues found
+4. Check for AUR helper (paru > yay)
+5. Install with --noconfirm if all checks pass
+
+<ParamField query="package_name" type="string" required>
+  Name of package to install.
 </ParamField>
-
-<ParamField query="aur" type="boolean" default="false">
-  Force installation from AUR. If `false`, the tool auto-detects whether to use official repos or AUR.
-</ParamField>
-
-<ParamField query="skip_checks" type="boolean" default="false">
-  Skip security checks (NOT RECOMMENDED). Only use for trusted packages.
-</ParamField>
-
-**Safety Features:**
-- ✅ Automatic security scanning before installation
-- ✅ Blocks packages with critical security threats
-- ✅ Requires confirmation for AUR packages
-- ✅ Checks for AUR helper (paru or yay)
-- ✅ Validates package exists before attempting install
-- ✅ Shows detailed security report
-
-**Returns:**
-
-<ResponseField name="status" type="string" required>
-  Installation status: `"success"`, `"blocked"`, `"failed"`, or `"cancelled"`
-</ResponseField>
-
-<ResponseField name="package" type="string">
-  Name of the package that was installed or attempted.
-</ResponseField>
-
-<ResponseField name="version" type="string">
-  Version of the package that was installed.
-</ResponseField>
-
-<ResponseField name="source" type="string">
-  Where the package came from: `"official"` or `"aur"`
-</ResponseField>
-
-<ResponseField name="security_checks" type="object">
-  Results of pre-installation security checks.
-  
-  <Expandable title="Security check details">
-    <ResponseField name="pkgbuild_safe" type="boolean">
-      Whether PKGBUILD passed safety analysis (AUR only).
-    </ResponseField>
-    
-    <ResponseField name="metadata_risk" type="string">
-      Trust level from metadata analysis: `"LOW"`, `"MEDIUM"`, or `"HIGH"`
-    </ResponseField>
-    
-    <ResponseField name="blocked_reason" type="string | null">
-      Reason why installation was blocked (if applicable).
-    </ResponseField>
-  </Expandable>
-</ResponseField>
-
-<ResponseField name="transaction_log" type="string">
-  Full installation log from pacman/AUR helper.
-</ResponseField>
-
-<ResponseField name="installed_files" type="array">
-  List of files installed by the package.
-</ResponseField>
 
 <Warning>
-**Requirements:**
-- Must be running on Arch Linux
-- AUR packages require paru or yay to be installed
-- Must have sudo privileges for installation
+Requires sudo access and `paru` or `yay` for AUR packages.
 </Warning>
 
-<Info>
-**Workflow:** This tool automatically runs:
-1. `get_official_package_info` - Check if package is official
-2. `analyze_pkgbuild_safety` - Scan PKGBUILD (if AUR)
-3. `analyze_package_metadata_risk` - Evaluate trust (if AUR)
-4. Installation with confirmation prompt
-</Info>
-
-**Prerequisites:** `get_official_package_info`, `analyze_pkgbuild_safety`, `analyze_package_metadata_risk`
-
-**Related:** `check_updates_dry_run`, `verify_package_integrity`, `get_transaction_history`
+**Returns:** Installation status and security report.
 
 ---
 
-### remove_package 🐧
+### remove_packages 🐧
 
-Remove single package with dependency handling.
+Unified tool for removing packages (single or multiple).
 
-**Parameters:**
-- `package` (string): Package name
-- `recursive` (optional): Remove deps (default: false)
-- `force` (optional): Force removal (default: false)
+<ParamField query="packages" type="string | array" required>
+  Package name (string) or list of package names (array) to remove.
+</ParamField>
 
-**Returns:** Removal status and affected packages
+<ParamField query="remove_dependencies" type="boolean" default="false">
+  Remove packages and their dependencies (`pacman -Rs`).
+</ParamField>
 
-**Related:** `remove_packages_batch`, `list_orphan_packages`
+<ParamField query="force" type="boolean" default="false">
+  Force removal ignoring dependencies (`pacman -Rdd`). **Use with caution!**
+</ParamField>
 
----
-
-### remove_packages_batch 🐧
-
-Remove multiple packages efficiently in one operation.
-
-**Parameters:**
-- `packages` (array): List of package names
-- `recursive` (optional): Remove deps (default: false)
-
-**Returns:** Batch removal status
-
-**Related:** `remove_package`, `remove_orphans`
+**Returns:** Removal status.
 
 ---
 
-## 🔧 Package Maintenance (7 tools)
+## 🔧 Package Maintenance (4 tools)
 
 Analyze, verify, and maintain package health.
 
-### list_orphan_packages 🐧
-
-Find packages installed as dependencies but no longer required.
-
-**Parameters:** None
-
-**Returns:** List of orphaned packages with sizes
-
-**Related:** `remove_orphans`, `mark_as_explicit`
-
----
-
-### remove_orphans 🐧
-
-Clean orphaned packages with safety checks.
-
-**Parameters:**
-- `dry_run` (optional): Preview only (default: true)
-- `exclude` (optional): Packages to keep
-
-**Returns:** Removal status or preview list
-
-**Prerequisites:** `list_orphan_packages`
-
-**Related:** `list_orphan_packages`
-
----
-
 ### verify_package_integrity 🐧
 
-Check package file integrity for modifications or corruption.
+Verify the integrity of installed package files. Detects modified, missing, or corrupted files.
 
-**Parameters:**
-- `package` (string): Package name
+<ParamField query="package_name" type="string" required>
+  Name of the package to verify.
+</ParamField>
 
-**Returns:** List of modified/missing files with details
+<ParamField query="thorough" type="boolean" default="false">
+  Perform thorough check including file attributes.
+</ParamField>
 
-**Related:** `get_transaction_history`, `find_package_owner`
-
----
-
-### list_explicit_packages 🐧
-
-List packages explicitly installed by user.
-
-**Parameters:** None
-
-**Returns:** User-installed packages (excludes dependencies)
-
-**Related:** `mark_as_explicit`, `mark_as_dependency`
+**Returns:** Integrity check results.
 
 ---
 
-### mark_as_explicit 🐧
+### manage_orphans 🐧
 
-Prevent package from being orphaned by marking as user-installed.
+Unified tool for managing orphaned packages (dependencies no longer required).
 
-**Parameters:**
-- `package` (string): Package name
+<ParamField query="action" type="string" required>
+  Action to perform:
+  - `list`: Show orphaned packages with disk usage
+  - `remove`: Remove orphaned packages
+</ParamField>
 
-**Returns:** Status confirmation
+<ParamField query="dry_run" type="boolean" default="true">
+  Preview what would be removed without actually removing (only for remove action).
+</ParamField>
 
-**Related:** `list_explicit_packages`, `list_orphan_packages`
+<ParamField query="exclude" type="array">
+  List of package names to exclude from removal.
+</ParamField>
+
+**Returns:** List of orphans or removal status.
 
 ---
 
-### mark_as_dependency 🐧
+### manage_install_reason 🐧
 
-Allow package to be orphaned by marking as dependency.
+Unified tool for managing package install reasons.
 
-**Parameters:**
-- `package` (string): Package name
+<ParamField query="action" type="string" required>
+  Action to perform:
+  - `list`: List all explicitly installed packages
+  - `mark_explicit`: Mark as user-installed (prevents removal as orphan)
+  - `mark_dependency`: Mark as dependency (allows auto-removal with orphans)
+</ParamField>
 
-**Returns:** Status confirmation
+<ParamField query="package_name" type="string">
+  Package name (required for mark actions).
+</ParamField>
 
-**Related:** `list_explicit_packages`, `list_orphan_packages`
+**Returns:** List of packages or operation status.
 
 ---
 
 ### check_database_freshness 🐧
 
-Check when package database was last synced.
+Check when package databases were last synchronized. Warns if databases are stale (> 24 hours).
 
-**Parameters:** None
-
-**Returns:** Last sync timestamp and age warnings
-
-**Related:** `get_database_sync_history`
+**Returns:** Database age and sync status.
 
 ---
 
-## 📁 File Organization (5 tools)
+## 📁 File Organization (2 tools)
 
 Navigate package-file relationships and groups.
 
-### find_package_owner 🐧
+### query_file_ownership 🐧
 
-Find which package owns a specific file.
+Unified tool for querying file-package ownership relationships.
 
-**Parameters:**
-- `file_path` (string): Absolute file path
+<ParamField query="query" type="string" required>
+  Query string: file path, package name, or filename pattern depending on mode.
+</ParamField>
 
-**Returns:** Owning package name or "not found"
+<ParamField query="mode" type="string" required>
+  Query mode:
+  - `file_to_package`: Find which package owns a file (`query` = file path)
+  - `package_to_files`: List all files in a package (`query` = package name)
+  - `filename_search`: Search for files across all packages (`query` = filename pattern)
+</ParamField>
 
-**Related:** `list_package_files`, `verify_package_integrity`
+<ParamField query="filter_pattern" type="string">
+  Optional regex pattern to filter files (only used in package_to_files mode).
+</ParamField>
 
----
-
-### list_package_files 🐧
-
-List all files installed by a package.
-
-**Parameters:**
-- `package` (string): Package name
-- `filter_regex` (optional): Regex pattern to filter files
-
-**Returns:** List of file paths
-
-**Related:** `find_package_owner`, `search_package_files`
+**Returns:** Package owner, file list, or search results.
 
 ---
 
-### search_package_files 🐧
+### manage_groups 🐧
 
-Search for files across all packages.
+Unified group management tool.
 
-**Parameters:**
-- `pattern` (string): Search pattern (filename or regex)
+<ParamField query="action" type="string" required>
+  Operation to perform:
+  - `list_groups`: List all package groups
+  - `list_packages_in_group`: List packages in specific group
+</ParamField>
 
-**Returns:** Matching files with owning packages
+<ParamField query="group_name" type="string">
+  Group name (required for list_packages_in_group).
+</ParamField>
 
-**Related:** `list_package_files`, `find_package_owner`
-
----
-
-### list_package_groups 🐧
-
-List all package groups (base, base-devel, etc.).
-
-**Parameters:** None
-
-**Returns:** All groups with member counts
-
-**Related:** `list_group_packages`
+**Returns:** Group list or package list.
 
 ---
 
-### list_group_packages 🐧
-
-Show packages in a specific group.
-
-**Parameters:**
-- `group` (string): Group name
-
-**Returns:** Packages in group with installation status
-
-**Prerequisites:** `list_package_groups`
-
-**Related:** `list_package_groups`
-
----
-
-## 🔒 Security Analysis (2 tools)
+## 🔒 Security Analysis (1 tool)
 
 Evaluate package safety before installation.
 
-### analyze_pkgbuild_safety 🌐
+### audit_package_security 🌐
 
-Comprehensive PKGBUILD security analysis using 50+ threat detection patterns.
+Comprehensive security audit for AUR packages.
 
-<ParamField query="package" type="string" required>
-  Name of the AUR package to analyze. The tool fetches and scans the PKGBUILD automatically.
-  
-  **Examples:**
-  - `"yay"`
-  - `"neofetch"`
-  - `"spotify"`
+<ParamField query="action" type="string" required>
+  Type of security audit:
+  - `pkgbuild_analysis`: Scan PKGBUILD for 50+ red flags
+  - `metadata_risk`: Evaluate trustworthiness via votes/maintainer/age
 </ParamField>
 
-**Detection Capabilities:**
-- ✅ 50+ red flag patterns
-- ✅ Malicious command detection
-- ✅ Obfuscation analysis
-- ✅ Crypto miner signatures
-- ✅ Rootkit technique scanning
-- ✅ Network security checks
+<ParamField query="pkgbuild_content" type="string">
+  PKGBUILD content for analysis.
+</ParamField>
 
-**Returns:**
+<ParamField query="package_name" type="string">
+  Package name for metadata analysis.
+</ParamField>
 
-<ResponseField name="risk_score" type="integer" required>
-  Overall risk score from 0-100. Higher scores indicate more risk.
-  - **0-20:** LOW risk
-  - **21-50:** MEDIUM risk
-  - **51-80:** HIGH risk
-  - **81-100:** CRITICAL risk
-</ResponseField>
-
-<ResponseField name="risk_level" type="string" required>
-  Human-readable risk level: `"LOW"`, `"MEDIUM"`, `"HIGH"`, or `"CRITICAL"`
-</ResponseField>
-
-<ResponseField name="findings" type="array">
-  Detailed list of security findings with context.
-  
-  <Expandable title="Finding properties">
-    <ResponseField name="severity" type="string">
-      Finding severity: `"CRITICAL"`, `"DANGEROUS"`, `"SUSPICIOUS"`, or `"WARNING"`
-    </ResponseField>
-    
-    <ResponseField name="category" type="string">
-      Category of the finding (e.g., "Dangerous Commands", "Network Activity")
-    </ResponseField>
-    
-    <ResponseField name="description" type="string">
-      Detailed description of what was found and why it's concerning.
-    </ResponseField>
-    
-    <ResponseField name="line_number" type="integer">
-      Line number in PKGBUILD where the issue was found (if applicable).
-    </ResponseField>
-    
-    <ResponseField name="code_snippet" type="string">
-      The actual code that triggered the finding.
-    </ResponseField>
-    
-    <ResponseField name="recommendation" type="string">
-      Specific action to take regarding this finding.
-    </ResponseField>
-  </Expandable>
-</ResponseField>
-
-<ResponseField name="dangerous_patterns" type="array">
-  List of critical security threats detected (e.g., `rm -rf /`, fork bombs).
-</ResponseField>
-
-<ResponseField name="suspicious_patterns" type="array">
-  List of suspicious patterns that warrant manual review.
-</ResponseField>
-
-<ResponseField name="warnings" type="array">
-  General warnings about the PKGBUILD's security posture.
-</ResponseField>
-
-<ResponseField name="recommendation" type="string">
-  Overall recommendation: install, review carefully, or avoid.
-</ResponseField>
-
-<Warning>
-**Important Limitations:**
-- Pattern matching can't catch all malicious code
-- Obfuscation techniques can bypass detection
-- Always manually review PKGBUILDs, especially for:
-  - Packages from unknown maintainers
-  - Packages with suspicious names
-  - Packages with no votes or low popularity
-</Warning>
-
-**Red Flag Indicators:**
-- 🔴 **Dangerous:** `rm -rf /`, `dd if=/dev/zero`, fork bombs
-- 🟠 **Suspicious:** `curl|sh`, `wget|sh`, base64 pipes, eval statements
-- 🟡 **Warnings:** chmod 777, binary downloads, external scripts
-
-<Tip>
-Use alongside `analyze_package_metadata_risk` for complete security assessment!
-</Tip>
-
-**Related:** `analyze_package_metadata_risk`, `install_package_secure`
+**Returns:** Security risk score, findings, or trust assessment.
 
 ---
 
-### analyze_package_metadata_risk 🌐
-
-Package trust scoring based on community metrics.
-
-**Parameters:**
-- `package` (string): AUR package name
-
-**Evaluates:**
-- Vote count and popularity
-- Maintainer presence and reputation
-- Package age and update frequency
-- Out-of-date status
-
-**Returns:** Trust score (0-100), risk factors, trust indicators
-
-**Prerequisites:** `search_aur`
-
-**Related:** `analyze_pkgbuild_safety`, `install_package_secure`
-
----
-
-## 📊 System Monitoring (5 tools)
+## 📊 System Monitoring (4 tools)
 
 Monitor system health and diagnostics.
 
 ### get_system_info 🌐
 
-Retrieve system information and resource usage.
+Get comprehensive system information including kernel version, architecture, hostname, uptime, and memory statistics.
 
-**Parameters:** None
-
-**Returns:** Kernel version, memory usage, uptime, CPU info
-
-**Related:** `check_disk_space`, `check_failed_services`
+**Returns:** System stats.
 
 ---
 
-### check_disk_space 🌐
+### analyze_storage 🌐
 
-Disk usage statistics with capacity warnings.
+Unified storage analysis tool.
 
-**Parameters:**
-- `warning_threshold` (optional): Warn if above % (default: 80)
+<ParamField query="action" type="string" required>
+  Analysis type:
+  - `disk_usage`: Check disk space for critical paths (Any)
+  - `cache_stats`: Analyze pacman package cache (Arch only)
+</ParamField>
 
-**Returns:** Disk usage per partition with warnings
-
-**Related:** `get_pacman_cache_stats`, `list_orphan_packages`
-
----
-
-### get_pacman_cache_stats 🐧
-
-Package cache size and age analysis.
-
-**Parameters:** None
-
-**Returns:** Cache size, package count, oldest package date
-
-**Related:** `check_disk_space`
+**Returns:** Disk usage stats or cache analysis.
 
 ---
 
-### check_failed_services ⚙️
+### diagnose_system ⚙️
 
-Find failed systemd services.
+Unified system diagnostics for systemd-based systems.
 
-**Parameters:** None
+<ParamField query="action" type="string" required>
+  Diagnostic action:
+  - `failed_services`: Check for failed systemd services
+  - `boot_logs`: Retrieve recent boot logs
+</ParamField>
 
-**Returns:** Failed service units with status details
+<ParamField query="lines" type="integer" default="100">
+  Number of log lines (for boot_logs).
+</ParamField>
 
-**Related:** `get_boot_logs`, `get_system_info`
-
----
-
-### get_boot_logs ⚙️
-
-Retrieve journalctl boot logs for diagnostics.
-
-**Parameters:**
-- `lines` (optional): Number of lines (default: 100)
-- `priority` (optional): Log level filter (default: all)
-
-**Returns:** Recent boot logs with timestamps
-
-**Related:** `check_failed_services`
+**Returns:** Failed services list or boot logs.
 
 ---
 
-## 📜 Transaction History (4 tools)
+### run_system_health_check 🐧
 
-Audit package operations and database events.
+Run a comprehensive system health check. Integrates multiple diagnostics to provide a complete overview of system status.
 
-### get_transaction_history 🐧
+**Checks:**
+- Updates available
+- Disk space
+- Failed services
+- Database freshness
+- Orphans
+- Critical news
 
-Recent package transactions (install/upgrade/remove).
-
-**Parameters:**
-- `limit` (optional): Number of transactions (default: 20)
-
-**Returns:** Transaction log with timestamps and actions
-
-**Related:** `find_when_installed`, `find_failed_transactions`
-
----
-
-### find_when_installed 🐧
-
-Package installation history and timeline.
-
-**Parameters:**
-- `package` (string): Package name
-
-**Returns:** Install date, version history, upgrade timeline
-
-**Related:** `get_transaction_history`
+**Returns:** Health report with issues and recommendations.
 
 ---
 
-### find_failed_transactions 🐧
+## 📜 Transaction History (1 tool)
 
-Failed package operations from pacman logs.
+Audit package operations.
 
-**Parameters:** None
+### query_package_history 🐧
 
-**Returns:** Failed transactions with error messages
+Unified tool for querying package history from pacman logs.
 
-**Related:** `get_transaction_history`
+<ParamField query="query_type" type="string" required>
+  Type of query:
+  - `all`: Recent transactions
+  - `package`: Specific package install/upgrade history
+  - `failures`: Failed transactions
+  - `sync`: Database sync history
+</ParamField>
 
----
+<ParamField query="package_name" type="string">
+  Package name (required for package query).
+</ParamField>
 
-### get_database_sync_history 🐧
+<ParamField query="limit" type="integer" default="50">
+  Maximum number of results.
+</ParamField>
 
-Database synchronization event log.
-
-**Parameters:**
-- `limit` (optional): Number of events (default: 10)
-
-**Returns:** Sync timestamps and statistics
-
-**Related:** `check_database_freshness`
-
----
-
-## 🌐 Mirror Management (4 tools)
-
-Optimize repository mirrors for speed and reliability.
-
-### list_active_mirrors 🐧
-
-Show currently configured mirrors from mirrorlist.
-
-**Parameters:** None
-
-**Returns:** Active mirror URLs with protocols
-
-**Related:** `test_mirror_speed`, `check_mirrorlist_health`
+**Returns:** Transaction log entries.
 
 ---
 
-### test_mirror_speed 🐧
+## 🌐 Mirror Management (1 tool)
 
-Test latency to configured mirrors.
+Optimize repository mirrors.
 
-**Parameters:**
-- `timeout` (optional): Test timeout in seconds (default: 5)
+### optimize_mirrors 🐧
 
-**Returns:** Mirror response times and availability
+Smart mirror management - consolidates 4 mirror operations.
 
-**Prerequisites:** `list_active_mirrors`
+<ParamField query="action" type="string" required>
+  Operation to perform:
+  - `status`: List configured mirrors
+  - `test`: Test mirror speeds
+  - `suggest`: Get optimal mirrors from archlinux.org
+  - `health`: Full health check
+</ParamField>
 
-**Related:** `suggest_fastest_mirrors`, `list_active_mirrors`
+<ParamField query="auto_test" type="boolean" default="false">
+  Test mirrors after listing (status action only).
+</ParamField>
 
----
+<ParamField query="country" type="string">
+  Country code for suggestions (e.g., 'US', 'DE').
+</ParamField>
 
-### suggest_fastest_mirrors 🌐
+<ParamField query="limit" type="integer" default="10">
+  Number of mirrors for suggestions.
+</ParamField>
 
-Recommend optimal mirrors by geographic location.
-
-**Parameters:**
-- `country` (optional): ISO country code (default: auto-detect)
-- `protocol` (optional): http/https (default: https)
-
-**Returns:** Ranked mirror list with locations and speeds
-
-**Related:** `test_mirror_speed`
-
----
-
-### check_mirrorlist_health 🐧
-
-Verify mirror configuration validity.
-
-**Parameters:** None
-
-**Returns:** Configuration health status and warnings
-
-**Related:** `list_active_mirrors`, `suggest_fastest_mirrors`
+**Returns:** Mirror status, test results, suggestions, or health report.
 
 ---
 
-## ⚙️ Configuration Management (4 tools)
+## ⚙️ Configuration (2 tools)
 
-Analyze system configuration files.
+Analyze system configuration.
 
 ### analyze_pacman_conf 🐧
 
-Parse pacman.conf settings and options.
+Parse and analyze pacman.conf with optional focus.
 
-**Parameters:** None
+<ParamField query="focus" type="string" default="full">
+  What to analyze:
+  - `full`: All settings
+  - `ignored_packages`: Only ignored packages with warnings for critical ones
+  - `parallel_downloads`: Only parallel downloads setting with optimization recommendations
+</ParamField>
 
-**Returns:** Configuration map with repositories, options, ignore lists
-
-**Related:** `check_ignored_packages`, `get_parallel_downloads_setting`
+**Returns:** Configuration details.
 
 ---
 
 ### analyze_makepkg_conf 🐧
 
-Parse makepkg.conf build settings.
+Parse and analyze makepkg.conf.
 
-**Parameters:** None
-
-**Returns:** Build flags, compression settings, package destinations
-
-**Related:** `analyze_pacman_conf`
-
----
-
-### check_ignored_packages 🐧
-
-List packages excluded from updates.
-
-**Parameters:** None
-
-**Returns:** Ignored packages with critical package warnings
-
-**Related:** `analyze_pacman_conf`
-
----
-
-### get_parallel_downloads_setting 🐧
-
-Get parallel download configuration value.
-
-**Parameters:** None
-
-**Returns:** Parallel download count or "disabled"
-
-**Related:** `analyze_pacman_conf`
-
----
-
-## Common Workflows
-
-Many tools work better together. Here are proven workflows for common tasks.
-
-<AccordionGroup>
-  <Accordion title="Safe AUR Installation Workflow" icon="shield-check">
-    **Security-first package installation from AUR.**
-    
-    <Steps>
-      <Step title="Search for package">
-        ```bash
-        search_aur query="package-name" sort_by="votes"
-        ```
-        Find the package and check popularity.
-      </Step>
-      
-      <Step title="Check trust score">
-        ```bash
-        analyze_package_metadata_risk package="package-name"
-        ```
-        Evaluate maintainer reputation and community trust.
-      </Step>
-      
-      <Step title="Scan for threats">
-        ```bash
-        analyze_pkgbuild_safety package="package-name"
-        ```
-        Deep scan PKGBUILD for malicious patterns.
-      </Step>
-      
-      <Step title="Install if safe">
-        ```bash
-        install_package_secure package="package-name"
-        ```
-        Automated installation with final confirmation.
-      </Step>
-    </Steps>
-    
-    <Tip>
-    Use the `audit_aur_package` prompt to automate this entire workflow!
-    </Tip>
-  </Accordion>
-  
-  <Accordion title="System Cleanup Workflow" icon="broom">
-    **Free up disk space by removing unused packages safely.**
-    
-    <Steps>
-      <Step title="Check disk usage">
-        ```bash
-        check_disk_space warning_threshold=80
-        ```
-        See current disk usage and identify space issues.
-      </Step>
-      
-      <Step title="Find orphaned packages">
-        ```bash
-        list_orphan_packages
-        ```
-        List packages no longer required by any installed package.
-      </Step>
-      
-      <Step title="Preview removal">
-        ```bash
-        remove_orphans dry_run=true
-        ```
-        See what would be removed without actually removing anything.
-      </Step>
-      
-      <Step title="Check cache size">
-        ```bash
-        get_pacman_cache_stats
-        ```
-        See how much space is used by package cache.
-      </Step>
-      
-      <Step title="Clean system">
-        ```bash
-        remove_orphans dry_run=false
-        # Then optionally: paccache -r
-        ```
-        Remove orphans and clean package cache.
-      </Step>
-    </Steps>
-    
-    <Warning>
-    Always review the preview list before actual removal!
-    </Warning>
-  </Accordion>
-  
-  <Accordion title="Mirror Optimization Workflow" icon="globe">
-    **Optimize repository mirrors for faster downloads.**
-    
-    <Steps>
-      <Step title="List current mirrors">
-        ```bash
-        list_active_mirrors
-        ```
-        See which mirrors you're currently using.
-      </Step>
-      
-      <Step title="Test mirror speeds">
-        ```bash
-        test_mirror_speed timeout=5
-        ```
-        Check latency and availability of current mirrors.
-      </Step>
-      
-      <Step title="Get recommendations">
-        ```bash
-        suggest_fastest_mirrors country="US" protocol="https"
-        ```
-        Find optimal mirrors for your location.
-      </Step>
-      
-      <Step title="Verify configuration">
-        ```bash
-        check_mirrorlist_health
-        ```
-        Validate that mirrorlist is properly configured.
-      </Step>
-      
-      <Step title="Update mirrorlist">
-        Manual step: Edit `/etc/pacman.d/mirrorlist` with recommended mirrors.
-        
-        <Info>
-        Consider using reflector for automated mirror management.
-        </Info>
-      </Step>
-    </Steps>
-  </Accordion>
-  
-  <Accordion title="Troubleshooting Workflow" icon="wrench">
-    **Diagnose system issues using diagnostic tools.**
-    
-    <Steps>
-      <Step title="Check system health">
-        ```bash
-        get_system_info
-        check_disk_space
-        ```
-        Get overview of system resources and capacity.
-      </Step>
-      
-      <Step title="Check for failed services">
-        ```bash
-        check_failed_services
-        ```
-        Find systemd services that failed to start.
-      </Step>
-      
-      <Step title="Review boot logs">
-        ```bash
-        get_boot_logs lines=200 priority="err"
-        ```
-        Check boot logs for errors and warnings.
-      </Step>
-      
-      <Step title="Search Wiki for solutions">
-        ```bash
-        search_archwiki query="[your error message]"
-        ```
-        Find relevant Wiki pages for your issue.
-      </Step>
-      
-      <Step title="Check transaction history">
-        ```bash
-        get_transaction_history limit=20
-        find_failed_transactions
-        ```
-        Review recent package operations for failures.
-      </Step>
-    </Steps>
-    
-    <Tip>
-    Use the `troubleshoot` prompt for guided troubleshooting!
-    </Tip>
-  </Accordion>
-  
-  <Accordion title="Pre-Update Check Workflow" icon="arrow-up">
-    **Safe system update preparation workflow.**
-    
-    <Steps>
-      <Step title="Check for critical news">
-        ```bash
-        check_critical_news
-        get_news_since_last_update
-        ```
-        Review Arch news for manual intervention requirements.
-      </Step>
-      
-      <Step title="Check available updates">
-        ```bash
-        check_updates_dry_run
-        ```
-        See what packages will be updated.
-      </Step>
-      
-      <Step title="Verify disk space">
-        ```bash
-        check_disk_space
-        get_pacman_cache_stats
-        ```
-        Ensure sufficient space for updates.
-      </Step>
-      
-      <Step title="Check database freshness">
-        ```bash
-        check_database_freshness
-        ```
-        Verify package database is recent.
-      </Step>
-      
-      <Step title="Perform update">
-        Manual step: Run `sudo pacman -Syu` after reviewing all checks.
-        
-        <Warning>
-        Always address critical news items BEFORE updating!
-        </Warning>
-      </Step>
-    </Steps>
-  </Accordion>
-  
-  <Accordion title="Package Investigation Workflow" icon="magnifying-glass">
-    **Deep dive into a package's details and relationships.**
-    
-    <Steps>
-      <Step title="Get package info">
-        ```bash
-        get_official_package_info package="package-name"
-        # or
-        search_aur query="package-name"
-        ```
-        Get basic metadata and dependencies.
-      </Step>
-      
-      <Step title="Check installation history">
-        ```bash
-        find_when_installed package="package-name"
-        ```
-        See when and why package was installed.
-      </Step>
-      
-      <Step title="List package files">
-        ```bash
-        list_package_files package="package-name"
-        ```
-        See all files installed by this package.
-      </Step>
-      
-      <Step title="Verify integrity">
-        ```bash
-        verify_package_integrity package="package-name"
-        ```
-        Check if files have been modified or corrupted.
-      </Step>
-      
-      <Step title="Check installation reason">
-        ```bash
-        list_explicit_packages  # Is it explicitly installed?
-        list_orphan_packages    # Is it orphaned?
-        ```
-        Understand why package is on your system.
-      </Step>
-    </Steps>
-  </Accordion>
-</AccordionGroup>
+**Returns:** CFLAGS, MAKEFLAGS, compression settings, and build configuration.
 
 ---
 
@@ -1066,35 +442,14 @@ Many tools work better together. Here are proven workflows for common tasks.
 
 | Category | Count | Permission | Platform Mix |
 |----------|-------|------------|--------------|
-| Discovery & Information | 6 | Read | 5 Any, 1 Arch |
-| Package Lifecycle | 4 | Write | All Arch |
-| Package Maintenance | 7 | Mixed | All Arch |
-| File Organization | 5 | Read | All Arch |
-| Security Analysis | 2 | Read | All Any |
-| System Monitoring | 5 | Read | 3 Any, 2 systemd, 1 Arch |
-| Transaction History | 4 | Read | All Arch |
-| Mirror Management | 4 | Read | 3 Arch, 1 Any |
-| Configuration | 4 | Read | All Arch |
+| Discovery & Information | 4 | Read | 3 Any, 1 Mixed |
+| Package Lifecycle | 3 | Mixed | All Arch |
+| Package Maintenance | 4 | Mixed | All Arch |
+| File Organization | 2 | Read | All Arch |
+| Security Analysis | 1 | Read | Any |
+| System Monitoring | 4 | Read | 2 Any, 1 systemd, 1 Arch |
+| Transaction History | 1 | Read | Arch |
+| Mirror Management | 1 | Read | Arch |
+| Configuration | 2 | Read | Arch |
 
-**Total:** 41 tools (17 platform-agnostic, 24 Arch-specific)
-
----
-
-## Learn More
-
-<CardGroup cols={2}>
-  <Card
-    title="Prompts"
-    icon="messages"
-    href="/arch-mcp/prompts"
-  >
-    Guided workflows combining tools
-  </Card>
-  <Card
-    title="Resources"
-    icon="folder-open"
-    href="/arch-mcp/resources"
-  >
-    URI-based data access
-  </Card>
-</CardGroup>
+**Total:** 22 tools (Unified from previously granular tools)

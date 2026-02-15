@@ -33,6 +33,7 @@ Direct access to Arch ecosystem data via custom URI schemes. Resources provide r
 | `config://makepkg` | `config://makepkg` | Parsed makepkg.conf configuration (Arch only) |
 | `mirrors://active` | `mirrors://active` | Currently configured mirrors (Arch only) |
 | `mirrors://health` | `mirrors://health` | Mirror configuration health status (Arch only) |
+| `system://health` | `system://health` | Comprehensive system health check report |
 
 ## How to Use Resources
 
@@ -288,6 +289,26 @@ system://logs/boot
 - Service startup information
 
 **Use Case:** Diagnose boot issues, startup problems, or service failures.
+
+### System Health Resources
+
+**URI Scheme:** `system://health`
+
+Get a comprehensive system health check report integrating multiple diagnostics.
+
+**Examples:**
+```
+system://health
+```
+
+**Returns:**
+- Overall system health status
+- List of failed checks or warnings
+- Resource usage summary
+- Package maintenance status
+- Mirror health status
+
+**Use Case:** Single-point check for overall system status.
 
 ### Package Database Freshness Resources
 
