@@ -92,7 +92,7 @@ Quick reference to understand what each capability type offers:
 | Capability | Count | Access Method | Use When | Example |
 |-----------|-------|---------------|----------|---------|
 | **Resources** | 23+ | URI schemes | Need raw data or documentation | `archwiki://Systemd` |
-| **Tools** | 41 | Function calls | Need to perform operations | `search_aur query="vim"` |
+| **Tools** | 22 | Function calls | Need to perform operations | `search_aur query="vim"` |
 | **Prompts** | 8 | Workflow triggers | Need guided multi-step process | `audit_aur_package` |
 
 <Info>
@@ -135,7 +135,7 @@ See how Resources, Tools, and Prompts combine to solve real problems.
   <Step title="Tool: Analyze PKGBUILD Safety">
     **Tool Execution:**
     ```
-    analyze_pkgbuild_safety package="neofetch"
+    audit_package_security action="pkgbuild_analysis" package_name="neofetch"
     ```
     
     Scans for security threats:
@@ -165,7 +165,7 @@ See how Resources, Tools, and Prompts combine to solve real problems.
   <Step title="Tool: Evaluate Trust Score">
     **Tool Execution:**
     ```
-    analyze_package_metadata_risk package="neofetch"
+    audit_package_security action="metadata_risk" package_name="neofetch"
     ```
     
     Evaluates:
@@ -219,8 +219,8 @@ See how Resources, Tools, and Prompts combine to solve real problems.
     C --> G[aur://pkgbuild]
     C --> H[aur://info]
     
-    D --> I[analyze_pkgbuild_safety]
-    D --> J[analyze_metadata_risk]
+    D --> I[audit_package_security]
+    D --> J[audit_package_security]
     D --> K[install_package_secure]
     
     E --> L[audit_aur_package]

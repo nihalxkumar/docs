@@ -397,11 +397,15 @@ get_pkgbuild(package: str) -> str
   └─> GET /cgit/aur.git/plain/PKGBUILD?h={package}
       └─> Raw PKGBUILD text
 
-analyze_pkgbuild_safety(content: str) -> dict
-  └─> Regex pattern matching for red flags
-      ├─> Dangerous: rm -rf /, dd, fork bombs
-      ├─> Suspicious: base64, eval, curl|sh
-      └─> Warnings: chmod 777, binary downloads
+audit_package_security(action: str, **kwargs) -> dict
+  └─> action='pkgbuild_analysis': Regex pattern matching for red flags
+  │   ├─> Dangerous: rm -rf /, dd, fork bombs
+  │   ├─> Suspicious: base64, eval, curl|sh
+  │   └─> Warnings: chmod 777, binary downloads
+  └─> action='metadata_risk': Evaluate trustworthiness
+      ├─> Vote count validation
+      ├─> Maintainer verification
+      └─> Package age and update frequency
 ```
 
 **API Endpoints:**
@@ -427,18 +431,19 @@ check_updates_dry_run() -> str
   └─> run_command(["checkupdates"])
       └─> _parse_checkupdates_output()
 
-# Package Lifecycle
-remove_package(), remove_packages_batch()
-list_orphan_packages(), remove_orphans()
-mark_as_explicit(), mark_as_dependency()
+# Package Lifecycle (consolidated)
+remove_packages(packages: str|list, ...)
+
+# Package Maintenance 
+manage_orphans(action: str, ...)
+manage_install_reason(action: str, ...)
 
 # Package Discovery
-find_package_owner(), list_package_files()
-search_package_files(), verify_package_integrity()
+query_file_ownership(query: str, mode: str, ...)
+verify_package_integrity(package: str, ...)
 
 # Package Groups
-list_package_groups(), list_group_packages()
-list_explicit_packages()
+manage_groups(action: str, ...)
 
 # Database Management
 check_database_freshness()
@@ -456,50 +461,39 @@ System health and diagnostics:
 get_system_info() -> dict
   └─> Platform info, kernel, memory, uptime
 
-check_disk_space() -> dict
-  └─> Disk usage for /, /home, /var with warnings
+analyze_storage(action: str) -> dict
+  ├─> action='disk_usage': Disk usage for /, /home, /var with warnings
+  └─> action='cache_stats': Cache size, package count, age analysis
 
-get_pacman_cache_stats() -> dict
-  └─> Cache size, package count, age analysis
+diagnose_system(action: str) -> dict
+  ├─> action='failed_services': systemctl --failed
+  └─> action='boot_logs': journalctl -b
 
-check_failed_services() -> list
-  └─> systemctl --failed
-
-get_boot_logs(lines: int) -> str
-  └─> journalctl -b
+run_system_health_check() -> dict
+  └─> Comprehensive: updates, disk, services, orphans, database, news
 ```
 
 ### News Integration (`news.py`)
 
-Arch Linux news feed parsing and analysis:
+Arch Linux news feed parsing:
 
 ```python
-get_latest_news(limit: int) -> list
-  └─> Parse RSS from archlinux.org/feeds/news/
-
-check_critical_news() -> list
-  └─> Filter news requiring manual intervention
-
-get_news_since_last_update() -> list
-  └─> Compare news timestamps with last pacman -Syu
+fetch_news(action: str, ...) -> dict
+  ├─> action='latest': Parse RSS from archlinux.org/feeds/news/
+  ├─> action='critical': Filter news requiring manual intervention
+  └─> action='since_update': Compare news timestamps with last pacman -Syu
 ```
 
 ### Transaction Logs (`logs.py`)
 
-Pacman transaction history analysis:
+Pacman transaction history:
 
 ```python
-get_transaction_history(days: int) -> list
-  └─> Parse /var/log/pacman.log
-
-find_when_installed(package: str) -> dict
-  └─> Search logs for installation date
-
-find_failed_transactions() -> list
-  └─> Extract failed operations from logs
-
-get_database_sync_history(days: int) -> list
-  └─> Track database refresh events
+query_package_history(query_type: str, ...) -> dict
+  ├─> query_type='all': Recent transactions
+  ├─> query_type='package': Specific package install/upgrade history
+  ├─> query_type='failures': Failed operations
+  └─> query_type='sync': Database sync history
 ```
 
 ### Mirror Management (`mirrors.py`)
@@ -507,17 +501,11 @@ get_database_sync_history(days: int) -> list
 Repository mirror testing and optimization:
 
 ```python
-list_active_mirrors() -> list
-  └─> Parse /etc/pacman.d/mirrorlist
-
-test_mirror_speed(mirror_url: str) -> dict
-  └─> Latency and throughput testing
-
-suggest_fastest_mirrors(country: str) -> list
-  └─> Query mirror status API
-
-check_mirrorlist_health() -> dict
-  └─> Validate mirror configuration
+optimize_mirrors(action: str, ...) -> dict
+  ├─> action='status': Parse /etc/pacman.d/mirrorlist
+  ├─> action='test': Latency and throughput testing
+  ├─> action='suggest': Query mirror status API
+  └─> action='health': Validate mirror configuration
 ```
 
 ### Configuration Parsing (`config.py`)
@@ -525,17 +513,13 @@ check_mirrorlist_health() -> dict
 System configuration analysis:
 
 ```python
-analyze_pacman_conf() -> dict
-  └─> Parse /etc/pacman.conf
+analyze_pacman_conf(focus: str = "full") -> dict
+  ├─> focus='full': Parse /etc/pacman.conf
+  ├─> focus='ignored_packages': List packages in IgnorePkg
+  └─> focus='parallel_downloads': Extract ParallelDownloads value
 
 analyze_makepkg_conf() -> dict
   └─> Parse /etc/makepkg.conf
-
-check_ignored_packages() -> list
-  └─> List packages in IgnorePkg
-
-get_parallel_downloads_setting() -> int
-  └─> Extract ParallelDownloads value
 ```
 
 ## Data Flow Examples
@@ -564,7 +548,7 @@ get_parallel_downloads_setting() -> int
     C -->|HTTP GET<br/>aur.archlinux.org/rpc| D["Package Metadata"]
     B -->|Step 2| E["get_pkgbuild<br/>aur://yay/pkgbuild"]
     E -->|HTTP GET<br/>cgit.aur.git/plain| F["Raw PKGBUILD"]
-    B -->|Step 3| G["analyze_pkgbuild_safety"]
+    B -->|Step 3| G["audit_package_security"]
     G -->|Pattern Matching| H["Safety Report"]
     B -->|Step 4| I["AI Summarizes"]
     I -->|Final| J["Safety Recommendation"]
